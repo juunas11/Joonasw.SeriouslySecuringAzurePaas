@@ -3,6 +3,7 @@ param naming object
 
 param appServiceEnvironmentResourceId string
 
+// Deployment takes 30 minutes
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: naming.appServicePlan
   location: location
