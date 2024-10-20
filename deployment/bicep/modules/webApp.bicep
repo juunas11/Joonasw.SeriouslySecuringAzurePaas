@@ -20,10 +20,15 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       appSettings: []
       alwaysOn: true
       ftpsState: 'Disabled'
-      minTlsVersion: '1.3'
-      minTlsCipherSuite: 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384'
+      // We could require 1.3 and a higher minimum cipher suite,
+      // but it feels a bit excessive.
+      // This is still within best practices.
+      minTlsVersion: '1.2'
+      minTlsCipherSuite: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
       remoteDebuggingEnabled: false
-      scmMinTlsVersion: '1.3'
+      scmMinTlsVersion: '1.2'
     }
   }
 }
+
+output webAppFqdn string = webApp.properties.defaultHostName

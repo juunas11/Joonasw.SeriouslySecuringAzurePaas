@@ -5,6 +5,12 @@ $config = Get-Content -Path (Join-Path $PSScriptRoot config.json) | ConvertFrom-
 $tenantId = $config.tenantId
 $subscriptionId = $config.subscriptionId
 $resourceGroup = $config.resourceGroup
+$domainName = $config.domainName
+
+# Get PFX as base 64 encoded string
+$certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $PSScriptRoot cert.pfx)))
+# TODO: Get this through secure string (user input)
+$certificatePassword = $config.certificatePassword
 
 # Check subscription is available
 az account show -s "$subscriptionId" | Out-Null
@@ -22,7 +28,9 @@ $mainBicepResult = az deployment group create `
     --subscription "$subscriptionId" `
     --resource-group "$resourceGroup" `
     --template-file "main.bicep" `
-    --name "$($deploymentNamePrefix)-main" | ConvertFrom-Json
+    --name "$($deploymentNamePrefix)-main" `
+    -p appGatewayCertificateData=$certificateData `
+    -p appGatewayCertificatePassword=$certificatePassword | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
     throw "Failed to deploy main.bicep."
@@ -31,6 +39,9 @@ if ($LASTEXITCODE -ne 0) {
 $mainBicepOutputs = $mainBicepResult.properties.outputs
 
 Pop-Location
+
+Write-Host "Deployment complete."
+Write-Host "You need to now set up a DNS A record: $domainName -> $($mainBicepOutputs.firewallPublicIpAddress.value)"
 
 # az extension add --name azure-devops
 # az devops configure --defaults organization=https://dev.azure.com/contoso project=ContosoWebApp

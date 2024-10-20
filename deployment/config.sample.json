@@ -1,5 +1,7 @@
 {
     "tenantId": "",
     "subscriptionId": "",
-    "resourceGroup": ""
+    "resourceGroup": "",
+    "location": "northeurope",
+    "domainName": ""
 }

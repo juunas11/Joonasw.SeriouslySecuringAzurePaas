@@ -3,6 +3,7 @@ param naming object
 
 param firewallSubnetResourceId string
 param firewallManagementSubnetResourceId string
+param appGatewayPrivateIpAddress string
 
 resource firewallPip 'Microsoft.Network/publicIPAddresses@2024-01-01' = {
   name: naming.firewallPip
@@ -74,5 +75,31 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
     firewallPolicy: {
       id: firewallPolicy.id
     }
+    natRuleCollections: [
+      {
+        name: ''
+        properties: {
+          rules: [
+            {
+              name: 'DNAT to App Gateway'
+              description: 'Guides traffic to Firewall Public IP to App Gateway'
+              destinationAddresses: [
+                firewallPip.properties.ipAddress
+              ]
+              destinationPorts: [
+                '80'
+                '443'
+              ]
+              translatedAddress: appGatewayPrivateIpAddress
+              protocols: [
+                'TCP'
+              ]
+            }
+          ]
+        }
+      }
+    ]
   }
 }
+
+output firewallPublicIpAddress string = firewallPip.properties.ipAddress

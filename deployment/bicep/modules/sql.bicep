@@ -21,9 +21,16 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
     tier: 'GeneralPurpose'
   }
   properties: {
+    // Ensure fast provisioning with these four settings
     subnetId: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, subnetName)
-    storageSizeInGB: 256
     vCores: 4
+    maintenanceConfigurationId: subscriptionResourceId(
+      'Microsoft.Maintenance/publicMaintenanceConfigurations',
+      'SQL_Default'
+    )
+    zoneRedundant: false
+
+    storageSizeInGB: 256
     licenseType: 'LicenseIncluded'
     hybridSecondaryUsage: 'Active'
     collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -31,16 +38,11 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
     minimalTlsVersion: '1.2'
     timezoneId: 'UTC'
     requestedBackupStorageRedundancy: 'Local'
-    zoneRedundant: false
     databaseFormat: 'AlwaysUpToDate'
     pricingModel: 'Regular'
     servicePrincipal: {
       type: 'None'
     }
-    maintenanceConfigurationId: subscriptionResourceId(
-      'Microsoft.Maintenance/publicMaintenanceConfigurations',
-      'SQL_Default'
-    )
     administrators: {
       azureADOnlyAuthentication: true
       administratorType: 'ActiveDirectory'

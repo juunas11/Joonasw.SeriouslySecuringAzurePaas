@@ -1,5 +1,10 @@
 param location string = resourceGroup().location
 
+@secure()
+param appGatewayCertificateData string
+@secure()
+param appGatewayCertificatePassword string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
@@ -76,15 +81,16 @@ module hubVnet 'modules/hubVnet.bicep' = {
   }
 }
 
-// module firewall 'modules/firewall.bicep' = {
-//   name: 'firewall'
-//   params: {
-//     location: location
-//     naming: naming
-//     firewallSubnetResourceId: hubVnet.outputs.firewallSubnetResourceId
-//     firewallManagementSubnetResourceId: hubVnet.outputs.firewallManagementSubnetResourceId
-//   }
-// }
+module firewall 'modules/firewall.bicep' = {
+  name: 'firewall'
+  params: {
+    location: location
+    naming: naming
+    firewallSubnetResourceId: hubVnet.outputs.firewallSubnetResourceId
+    firewallManagementSubnetResourceId: hubVnet.outputs.firewallManagementSubnetResourceId
+    appGatewayPrivateIpAddress: appGatewayPrivateIpAddress
+  }
+}
 
 module appVnet 'modules/appVnet.bicep' = {
   name: '${deployment().name}-appVnet'
@@ -105,20 +111,6 @@ module appHubPeering 'modules/vnetPeering.bicep' = {
   dependsOn: [
     appVnet
     hubVnet
-  ]
-}
-
-module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
-  name: '${deployment().name}-appGatewayWaf'
-  params: {
-    location: location
-    naming: naming
-    vnetName: naming.appVnet
-    appGatewaySubnetName: appSubnets.appGateway.name
-    appGatewayPrivateIpAddress: appGatewayPrivateIpAddress
-  }
-  dependsOn: [
-    appVnet
   ]
 }
 
@@ -153,3 +145,22 @@ module webApp 'modules/webApp.bicep' = {
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
   }
 }
+
+module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
+  name: '${deployment().name}-appGatewayWaf'
+  params: {
+    location: location
+    naming: naming
+    vnetName: naming.appVnet
+    appGatewaySubnetName: appSubnets.appGateway.name
+    appGatewayPrivateIpAddress: appGatewayPrivateIpAddress
+    certificateData: appGatewayCertificateData
+    certificatePassword: appGatewayCertificatePassword
+    webAppFqdn: webApp.outputs.webAppFqdn
+  }
+  dependsOn: [
+    appVnet
+  ]
+}
+
+output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress

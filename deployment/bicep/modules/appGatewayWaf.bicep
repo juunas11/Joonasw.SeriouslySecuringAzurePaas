@@ -4,6 +4,12 @@ param naming object
 param vnetName string
 param appGatewaySubnetName string
 param appGatewayPrivateIpAddress string
+param webAppFqdn string
+
+@secure()
+param certificateData string
+@secure()
+param certificatePassword string
 
 resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies@2024-01-01' = {
   name: naming.wafPolicy
@@ -20,9 +26,10 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
     policySettings: {
       requestBodyCheck: true
       maxRequestBodySizeInKb: 128
-      fileUploadLimitInMb: 1
+      // We don't have file uploads
+      fileUploadLimitInMb: 0
       state: 'Enabled'
-      mode: 'Detection' // TODO
+      mode: 'Prevention'
     }
   }
 }
@@ -80,7 +87,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
         properties: {
           backendAddresses: [
             {
-              fqdn: 'todo.joonasw.net'
+              fqdn: webAppFqdn
             }
           ]
         }
@@ -93,14 +100,41 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
           port: 80
           protocol: 'Http'
           cookieBasedAffinity: 'Disabled'
-          pickHostNameFromBackendAddress: false
-          requestTimeout: 20
+          // Seconds
+          requestTimeout: 30
+        }
+      }
+      {
+        name: 'httpsSettings'
+        properties: {
+          port: 443
+          protocol: 'Https'
+          cookieBasedAffinity: 'Disabled'
+          pickHostNameFromBackendAddress: true
+          // Seconds
+          requestTimeout: 30
         }
       }
     ]
     httpListeners: [
       {
-        name: 'backendHttpListener'
+        name: 'frontendHttpListener'
+        properties: {
+          frontendIPConfiguration: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/frontendIPConfigurations',
+              naming.appGateway,
+              'appGatewayFrontendIp'
+            )
+          }
+          frontendPort: {
+            id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', naming.appGateway, 'port_80')
+          }
+          protocol: 'Http'
+        }
+      }
+      {
+        name: 'backendHttpsListener'
         properties: {
           firewallPolicy: {
             id: wafPolicy.id
@@ -113,10 +147,17 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
             )
           }
           frontendPort: {
-            id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', naming.appGateway, 'port_80')
+            id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', naming.appGateway, 'port_443')
           }
-          protocol: 'Http'
+          protocol: 'Https'
           requireServerNameIndication: false
+          sslCertificate: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/sslCertificates',
+              naming.appGateway,
+              'appGatewaySslCert'
+            )
+          }
         }
       }
     ]
@@ -130,7 +171,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
             id: resourceId(
               'Microsoft.Network/applicationGateways/httpListeners',
               naming.appGateway,
-              'backendHttpListener'
+              'backendHttpsListener'
             )
           }
           backendAddressPool: {
@@ -144,9 +185,47 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
             id: resourceId(
               'Microsoft.Network/applicationGateways/backendHttpSettingsCollection',
               naming.appGateway,
-              'httpSettings'
+              'httpsSettings'
             )
           }
+        }
+      }
+      {
+        name: 'httpToHttpsRedirectRule'
+        properties: {
+          ruleType: 'Basic'
+          priority: 20
+          httpListener: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/httpListeners',
+              naming.appGateway,
+              'frontendHttpListener'
+            )
+          }
+          redirectConfiguration: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/redirectConfigurations',
+              naming.appGateway,
+              'httpToHttpsRedirect'
+            )
+          }
+        }
+      }
+    ]
+    redirectConfigurations: [
+      {
+        name: 'httpToHttpsRedirect'
+        properties: {
+          redirectType: 'Permanent'
+          targetListener: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/httpListeners',
+              naming.appGateway,
+              'backendHttpsListener'
+            )
+          }
+          includePath: true
+          includeQueryString: true
         }
       }
     ]
@@ -154,6 +233,21 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
     enableHttp2: false
     firewallPolicy: {
       id: wafPolicy.id
+    }
+    sslCertificates: [
+      {
+        name: 'appGatewaySslCert'
+        properties: {
+          data: certificateData
+          password: certificatePassword
+        }
+      }
+    ]
+    sslPolicy: {
+      // We _could_ require TLS 1.3 and only select cipher suites here
+      // This built-in is quite strict already though (TLS 1.2 + 6 cipher suites)
+      policyType: 'Predefined'
+      policyName: 'AppGwSslPolicy20220101S'
     }
   }
 }
