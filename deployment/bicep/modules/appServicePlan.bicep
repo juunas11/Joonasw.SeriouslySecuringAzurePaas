@@ -7,7 +7,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: naming.appServicePlan
   location: location
   sku: {
-    name: 'I1v2'
+    name: 'I1V2'
     tier: 'Isolated'
     capacity: 1
   }
@@ -17,3 +17,5 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
     }
   }
 }
+
+output appServicePlanResourceId string = appServicePlan.id

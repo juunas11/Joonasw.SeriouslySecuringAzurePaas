@@ -1,23 +1,36 @@
 param location string
 param naming object
-param vnetAddressSpaces object
+param addressSpace string
+param subnets object
 
 resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   name: naming.hubVnet
   location: location
   properties: {
     addressSpace: {
-      addressPrefixes: [vnetAddressSpaces.hub]
+      addressPrefixes: [
+        addressSpace
+      ]
     }
     subnets: [
       {
-        name: ''
+        name: subnets.firewall.name
         properties: {
-          addressPrefix: ''
-          networkSecurityGroup: {
-            id: ''
-          }
-          privateEndpointNetworkPolicies: 'Enabled'
+          addressPrefix: subnets.firewall.addressPrefix
+          // networkSecurityGroup: {
+          //   id: ''
+          // }
+          // privateEndpointNetworkPolicies: 'Enabled'
+        }
+      }
+      {
+        name: subnets.firewallManagement.name
+        properties: {
+          addressPrefix: subnets.firewallManagement.addressPrefix
+          // networkSecurityGroup: {
+          //   id: ''
+          // }
+          // privateEndpointNetworkPolicies: 'Enabled'
         }
       }
     ]
@@ -27,3 +40,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
     // }
   }
 }
+
+output firewallSubnetResourceId string = resourceId(
+  'Microsoft.Network/virtualNetworks/subnets',
+  vnet.name,
+  'AzureFirewallSubnet'
+)
+output firewallManagementSubnetResourceId string = resourceId(
+  'Microsoft.Network/virtualNetworks/subnets',
+  vnet.name,
+  'AzureFirewallManagementSubnet'
+)
