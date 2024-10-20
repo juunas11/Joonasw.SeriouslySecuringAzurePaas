@@ -12,11 +12,12 @@ var naming = {
   firewallManagementPip: 'pip-afw-mgmt-${suffix}'
   firewallPolicy: 'afw-policy-${suffix}'
   wafPolicy: 'waf-policy-${suffix}'
+  webApp: 'app-${suffix}'
 }
 
 var vnetAddressSpaces = {
-  hub: '10.0.0.0/22'
-  app: '10.0.4.0/22'
+  hub: '10.0.0.0/22' // 10.0.0.0 - 10.0.3.255
+  app: '10.0.4.0/22' // 10.0.4.0 - 10.0.7.255
 }
 
 var hubSubnets = {
@@ -57,6 +58,10 @@ var appSubnets = {
   storageKeyVault: {
     name: 'storageKeyVault'
     addressPrefix: '10.0.5.128/26'
+  }
+  buildAgent: {
+    name: 'buildAgent'
+    addressPrefix: '10.0.5.192/26'
   }
 }
 var appGatewayPrivateIpAddress = '10.0.4.4'

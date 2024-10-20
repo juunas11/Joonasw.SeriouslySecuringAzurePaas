@@ -17,12 +17,11 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     httpsOnly: true
     publicNetworkAccess: 'Disabled'
     siteConfig: {
-      appSettings: [
-      ]
+      appSettings: []
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.3'
-      minTlsCipherSuite: 'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384'
+      minTlsCipherSuite: 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384'
       remoteDebuggingEnabled: false
       scmMinTlsVersion: '1.3'
     }
