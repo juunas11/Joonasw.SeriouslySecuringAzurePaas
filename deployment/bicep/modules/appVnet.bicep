@@ -67,3 +67,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
     ]
   }
 }
+
+// TODO: NSGs, route tables, DNS
+output vnetResourceId string = vnet.id

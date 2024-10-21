@@ -11,11 +11,14 @@ var naming = {
   appServiceEnvironment: 'ase-${suffix}'
   appServicePlan: 'asp-${suffix}'
   appVnet: 'vnet-app-${suffix}'
-  hubVnet: 'vnet-hub-${suffix}'
   firewall: 'afw-${suffix}'
-  firewallPip: 'pip-afw-${suffix}'
   firewallManagementPip: 'pip-afw-mgmt-${suffix}'
+  firewallPip: 'pip-afw-${suffix}'
   firewallPolicy: 'afw-policy-${suffix}'
+  keyVault: 'kv-${suffix}'
+  hubVnet: 'vnet-hub-${suffix}'
+  storageAccount: 'sa${suffix}'
+  storageWebAppAuthenticationContainer: 'webAppAuth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
 }
@@ -33,6 +36,10 @@ var hubSubnets = {
   firewallManagement: {
     name: 'AzureFirewallManagementSubnet'
     addressPrefix: '10.0.1.0/24'
+  }
+  monitor: {
+    name: 'monitor'
+    addressPrefix: '10.0.2.0/26'
   }
 }
 var appSubnets = {
@@ -114,6 +121,38 @@ module appHubPeering 'modules/vnetPeering.bicep' = {
   ]
 }
 
+module commonPrivateDns 'modules/commonPrivateDns.bicep' = {
+  name: '${deployment().name}-commonPrivateDns'
+  params: {
+    appVnetResourceId: appVnet.outputs.vnetResourceId
+  }
+}
+
+module keyVault 'modules/keyVault.bicep' = {
+  name: '${deployment().name}-keyVault'
+  params: {
+    location: location
+    naming: naming
+    keyVaultPrivateDnsZoneId: commonPrivateDns.outputs.keyVaultDnsZoneId
+    privateEndpointVnetName: naming.appVnet
+    privateEndpointSubnetName: appSubnets.appServiceKeyVault.name
+  }
+  dependsOn: [
+    appVnet
+  ]
+}
+
+module storageAccount 'modules/storageAccount.bicep' = {
+  name: '${deployment().name}-storageAccount'
+  params: {
+    location: location
+    naming: naming
+    privateEndpointVnetName: naming.appVnet
+    privateEndpointSubnetName: appSubnets.storage.name
+    storageBlobPrivateDnsZoneId: commonPrivateDns.outputs.storageBlobDnsZoneId
+  }
+}
+
 module appServiceEnvironment 'modules/appServiceEnvironment.bicep' = {
   name: '${deployment().name}-appServiceEnvironment'
   params: {
@@ -143,6 +182,8 @@ module webApp 'modules/webApp.bicep' = {
     naming: naming
     appServiceEnvironmentResourceId: appServiceEnvironment.outputs.appServiceEnvironmentResourceId
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
+    keyVaultResourceId: keyVault.outputs.keyVaultResourceId
+    storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
   }
 }
 

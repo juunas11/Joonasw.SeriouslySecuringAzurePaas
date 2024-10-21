@@ -3,6 +3,8 @@ param naming object
 
 param vnetName string
 param subnetName string
+param adminGroupName string
+param adminGroupId string
 
 // SQL MI deployment is typically very slow
 // Fast provisioning (~30 minutes) is available if:
@@ -46,10 +48,17 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
     administrators: {
       azureADOnlyAuthentication: true
       administratorType: 'ActiveDirectory'
-      login: ''
-      sid: ''
+      login: adminGroupName
+      sid: adminGroupId
       tenantId: tenant().tenantId
       principalType: 'Group'
     }
   }
 }
+
+// I think the name here is not correct
+// resource dnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+//   name: 'privatelink.${naming.sqlManagedInstance}.database.windows.net'
+//   location: 'global'
+//   properties: {}
+// }

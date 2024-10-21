@@ -33,6 +33,18 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           // privateEndpointNetworkPolicies: 'Enabled'
         }
       }
+      {
+        name: subnets.monitor.name
+        properties: {
+          addressPrefix: subnets.monitor.addressPrefix
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+          // networkSecurityGroup: {
+          //   id: ''
+          // }
+          // privateEndpointNetworkPolicies: 'Enabled'
+        }
+      }
     ]
     // enableDdosProtection: true
     // ddosProtectionPlan: {
