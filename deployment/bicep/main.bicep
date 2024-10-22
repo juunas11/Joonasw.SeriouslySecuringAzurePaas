@@ -1,23 +1,41 @@
 param location string = resourceGroup().location
 
+param sqlAdminGroupName string
+param sqlAdminGroupId string
+
 @secure()
 param appGatewayCertificateData string
 @secure()
 param appGatewayCertificatePassword string
 
+@secure()
+param buildAgentAdminUsername string
+@secure()
+param buildAgentAdminPassword string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
+  appInsights: 'ai-${suffix}'
   appServiceEnvironment: 'ase-${suffix}'
   appServicePlan: 'asp-${suffix}'
   appVnet: 'vnet-app-${suffix}'
+  appVnetRouteTable: 'rt-app-${suffix}'
+  buildAgentVmNic: 'nic-build-agent-${suffix}'
+  buildAgentVmScaleSet: 'vmss-build-agent-${suffix}'
   firewall: 'afw-${suffix}'
   firewallManagementPip: 'pip-afw-mgmt-${suffix}'
   firewallPip: 'pip-afw-${suffix}'
   firewallPolicy: 'afw-policy-${suffix}'
   keyVault: 'kv-${suffix}'
+  keyVaultPrivateEndpoint: 'kv-pe-${suffix}'
   hubVnet: 'vnet-hub-${suffix}'
+  logAnalytics: 'law-${suffix}'
+  logAnalyticsPrivateEndpoint: 'law-pe-${suffix}'
+  logAnalyticsPrivateLinkScope: 'law-pls-${suffix}'
+  sqlManagedInstance: 'sql-${suffix}'
   storageAccount: 'sa${suffix}'
+  storageAccountPrivateEndpoint: 'sa-pe-blob-${suffix}'
   storageWebAppAuthenticationContainer: 'webAppAuth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
@@ -105,8 +123,10 @@ module appVnet 'modules/appVnet.bicep' = {
     location: location
     naming: naming
     addressSpace: vnetAddressSpaces.app
+    hubAddressSpace: vnetAddressSpaces.hub
     subnets: appSubnets
     hubSubnets: hubSubnets
+    firewallPrivateIpAddress: firewall.outputs.firewallPrivateIpAddress
   }
 }
 
@@ -125,8 +145,55 @@ module appHubPeering 'modules/vnetPeering.bicep' = {
 module commonPrivateDns 'modules/commonPrivateDns.bicep' = {
   name: '${deployment().name}-commonPrivateDns'
   params: {
+    hubVnetResourceId: hubVnet.outputs.vnetResourceId
     appVnetResourceId: appVnet.outputs.vnetResourceId
   }
+}
+
+module monitor 'modules/monitor.bicep' = {
+  name: '${deployment().name}-monitor'
+  params: {
+    location: location
+    naming: naming
+    privateEndpointVnetName: naming.hubVnet
+    privateEndpointSubnetName: hubSubnets.monitor.name
+    hubVnetResourceId: hubVnet.outputs.vnetResourceId
+    appVnetResourceId: appVnet.outputs.vnetResourceId
+    storageBlobDnsZoneResourceId: commonPrivateDns.outputs.storageBlobDnsZoneResourceId
+  }
+  dependsOn: [
+    hubVnet
+  ]
+}
+
+module sql 'modules/sql.bicep' = {
+  name: '${deployment().name}-sql'
+  params: {
+    location: location
+    naming: naming
+    vnetName: naming.appVnet
+    subnetName: appSubnets.sql.name
+    adminGroupName: sqlAdminGroupName
+    adminGroupId: sqlAdminGroupId
+  }
+  dependsOn: [
+    appVnet
+  ]
+}
+
+module buildAgent 'modules/buildAgent.bicep' = {
+  name: '${deployment().name}-buildAgent'
+  params: {
+    location: location
+    naming: naming
+    vnetName: naming.appVnet
+    subnetName: appSubnets.buildAgent.name
+    adminUsername: buildAgentAdminUsername
+    adminPassword: buildAgentAdminPassword
+  }
+  dependsOn: [
+    appVnet
+  ]
 }
 
 module keyVault 'modules/keyVault.bicep' = {
@@ -134,7 +201,7 @@ module keyVault 'modules/keyVault.bicep' = {
   params: {
     location: location
     naming: naming
-    keyVaultPrivateDnsZoneId: commonPrivateDns.outputs.keyVaultDnsZoneId
+    keyVaultPrivateDnsZoneId: commonPrivateDns.outputs.keyVaultDnsZoneResourceId
     privateEndpointVnetName: naming.appVnet
     privateEndpointSubnetName: appSubnets.appServiceKeyVault.name
   }
@@ -150,7 +217,7 @@ module storageAccount 'modules/storageAccount.bicep' = {
     naming: naming
     privateEndpointVnetName: naming.appVnet
     privateEndpointSubnetName: appSubnets.storage.name
-    storageBlobPrivateDnsZoneId: commonPrivateDns.outputs.storageBlobDnsZoneId
+    storageBlobPrivateDnsZoneId: commonPrivateDns.outputs.storageBlobDnsZoneResourceId
   }
 }
 

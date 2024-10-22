@@ -30,7 +30,11 @@ $mainBicepResult = az deployment group create `
     --template-file "main.bicep" `
     --name "$($deploymentNamePrefix)-main" `
     -p appGatewayCertificateData=$certificateData `
-    -p appGatewayCertificatePassword=$certificatePassword | ConvertFrom-Json
+    -p appGatewayCertificatePassword=$certificatePassword `
+    -p sqlAdminGroupName=$sqlAdminGroupName `
+    -p sqlAdminGroupId=$sqlAdminGroupId `
+    -p buildAgentAdminUsername=$buildAgentAdminUsername `
+    -p buildAgentAdminPassword=$buildAgentAdminPassword | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
     throw "Failed to deploy main.bicep."

@@ -2,8 +2,10 @@ param location string
 param naming object
 
 param addressSpace string
+param hubAddressSpace string
 param subnets object
 param hubSubnets object
+param firewallPrivateIpAddress string
 
 resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   name: 'nsg-app-${subnets.appServiceEnvironment.name}'
@@ -37,7 +39,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
         }
       }
       {
-        name: 'AllowVnetHttpsOutBound'
+        name: 'AllowVnetHttpsOutbound'
         properties: {
           priority: 100
           direction: 'Outbound'
@@ -50,9 +52,22 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
         }
       }
       {
-        name: 'AllowVnetSqlOutBound'
+        name: 'AllowHubHttpsOutbound'
         properties: {
           priority: 200
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: hubAddressSpace
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'AllowVnetSqlOutbound'
+        properties: {
+          priority: 300
           direction: 'Outbound'
           access: 'Allow'
           protocol: 'Tcp'
@@ -266,6 +281,26 @@ resource storageKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01'
   }
 }
 
+resource routeTable 'Microsoft.Network/routeTables@2024-01-01' = {
+  name: naming.appVnetRouteTable
+  location: location
+  properties: {
+    disableBgpRoutePropagation: true
+    routes: [
+      {
+        name: 'routeToFirewall'
+        type: 'Microsoft.Network/routeTables/routes'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: firewallPrivateIpAddress
+          hasBgpOverride: false
+        }
+      }
+    ]
+  }
+}
+
 resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   name: naming.appVnet
   location: location
@@ -282,6 +317,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.appServiceEnvironment.addressPrefix
           networkSecurityGroup: {
             id: appServiceEnvironmentNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
           }
           delegations: [
             {
@@ -300,6 +338,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           networkSecurityGroup: {
             id: appGatewayNsg.id
           }
+          routeTable: {
+            id: routeTable.id
+          }
         }
       }
       {
@@ -308,6 +349,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.sql.addressPrefix
           networkSecurityGroup: {
             id: sqlNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
           }
         }
       }
@@ -318,6 +362,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           networkSecurityGroup: {
             id: appServiceKeyVaultNsg.id
           }
+          routeTable: {
+            id: routeTable.id
+          }
         }
       }
       {
@@ -326,6 +373,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.storage.addressPrefix
           networkSecurityGroup: {
             id: storageNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
           }
         }
       }
@@ -336,6 +386,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           networkSecurityGroup: {
             id: sqlKeyVaultNsg.id
           }
+          routeTable: {
+            id: routeTable.id
+          }
         }
       }
       {
@@ -344,6 +397,18 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.storageKeyVault.addressPrefix
           networkSecurityGroup: {
             id: storageKeyVaultNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
+          }
+        }
+      }
+      {
+        name: subnets.buildAgent.name
+        properties: {
+          addressPrefix: subnets.buildAgent.addressPrefix
+          routeTable: {
+            id: routeTable.id
           }
         }
       }

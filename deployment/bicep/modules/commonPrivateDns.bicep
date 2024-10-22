@@ -1,5 +1,7 @@
+param hubVnetResourceId string
 param appVnetResourceId string
 
+var hubVnetName = last(split(hubVnetResourceId, '/'))
 var appVnetName = last(split(appVnetResourceId, '/'))
 
 resource keyVaultDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
@@ -14,7 +16,7 @@ resource storageBlobDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   properties: {}
 }
 
-resource keyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+resource appKeyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: keyVaultDnsZone
   name: 'link_to_${appVnetName}'
   properties: {
@@ -25,7 +27,7 @@ resource keyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLi
   }
 }
 
-resource storageBlobDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+resource appStorageBlobDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: storageBlobDnsZone
   name: 'link_to_${appVnetName}'
   properties: {
@@ -36,5 +38,16 @@ resource storageBlobDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwor
   }
 }
 
-output keyVaultDnsZoneId string = keyVaultDnsZone.id
-output storageBlobDnsZoneId string = storageBlobDnsZone.id
+resource hubStorageBlobDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: storageBlobDnsZone
+  name: 'link_to_${hubVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: hubVnetResourceId
+    }
+  }
+}
+
+output keyVaultDnsZoneResourceId string = keyVaultDnsZone.id
+output storageBlobDnsZoneResourceId string = storageBlobDnsZone.id

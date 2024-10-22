@@ -3,6 +3,7 @@ param naming object
 
 param vnetName string
 param subnetName string
+@secure()
 param adminUsername string
 @secure()
 param adminPassword string

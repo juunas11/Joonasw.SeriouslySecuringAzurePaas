@@ -5,6 +5,7 @@ param privateEndpointVnetName string
 param privateEndpointSubnetName string
 param hubVnetResourceId string
 param appVnetResourceId string
+param storageBlobDnsZoneResourceId string
 
 var hubVnetName = last(split(hubVnetResourceId, '/'))
 var appVnetName = last(split(appVnetResourceId, '/'))
@@ -100,6 +101,30 @@ resource privateEndpointDnsZoneGroup 'Microsoft.Network/privateEndpoints/private
           privateDnsZoneId: monitorDnsZone.id
         }
       }
+      {
+        name: 'privatelink-oms-opinsights-azure-com'
+        properties: {
+          privateDnsZoneId: omsDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-ods-opinsights-azure-com'
+        properties: {
+          privateDnsZoneId: odsDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-agentsvc-azure-automation-net'
+        properties: {
+          privateDnsZoneId: agentSvcDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-blob-core-windows-net'
+        properties: {
+          privateDnsZoneId: storageBlobDnsZoneResourceId
+        }
+      }
     ]
   }
 }
@@ -123,6 +148,90 @@ resource hubMonitorDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwork
 
 resource appMonitorDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: monitorDnsZone
+  name: 'link_to_${appVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: appVnetResourceId
+    }
+  }
+}
+
+resource omsDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'privatelink.oms.opinsights.azure.com'
+  location: 'global'
+  properties: {}
+}
+
+resource hubOmsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: omsDnsZone
+  name: 'link_to_${hubVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: hubVnetResourceId
+    }
+  }
+}
+
+resource appOmsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: omsDnsZone
+  name: 'link_to_${appVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: appVnetResourceId
+    }
+  }
+}
+
+resource odsDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'privatelink.ods.opinsights.azure.com'
+  location: 'global'
+  properties: {}
+}
+
+resource hubOdsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: odsDnsZone
+  name: 'link_to_${hubVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: hubVnetResourceId
+    }
+  }
+}
+
+resource appOdsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: odsDnsZone
+  name: 'link_to_${appVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: appVnetResourceId
+    }
+  }
+}
+
+resource agentSvcDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'privatelink.agentsvc.azure-automation.net'
+  location: 'global'
+  properties: {}
+}
+
+resource hubAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: agentSvcDnsZone
+  name: 'link_to_${hubVnetName}'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: hubVnetResourceId
+    }
+  }
+}
+
+resource appAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: agentSvcDnsZone
   name: 'link_to_${appVnetName}'
   properties: {
     registrationEnabled: false

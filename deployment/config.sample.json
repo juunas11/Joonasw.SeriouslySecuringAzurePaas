@@ -1,7 +1,11 @@
 {
-    "tenantId": "",
-    "subscriptionId": "",
-    "resourceGroup": "",
-    "location": "northeurope",
-    "domainName": ""
+  "tenantId": "",
+  "subscriptionId": "",
+  "resourceGroup": "",
+  "location": "northeurope",
+  "domainName": "",
+  "sqlAdminGroupName": "",
+  "sqlAdminGroupId": "",
+  "buildAgentAdminUsername": "",
+  "buildAgentAdminPassword": ""
 }

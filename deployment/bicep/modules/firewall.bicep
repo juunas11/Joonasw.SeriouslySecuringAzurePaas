@@ -103,3 +103,4 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
 }
 
 output firewallPublicIpAddress string = firewallPip.properties.ipAddress
+output firewallPrivateIpAddress string = firewall.properties.ipConfigurations[0].properties.privateIPAddress
