@@ -106,6 +106,7 @@ module appVnet 'modules/appVnet.bicep' = {
     naming: naming
     addressSpace: vnetAddressSpaces.app
     subnets: appSubnets
+    hubSubnets: hubSubnets
   }
 }
 
