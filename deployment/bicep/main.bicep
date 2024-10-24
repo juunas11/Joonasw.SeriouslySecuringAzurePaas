@@ -21,6 +21,7 @@ var naming = {
   appServicePlan: 'asp-${suffix}'
   appVnet: 'vnet-app-${suffix}'
   appVnetRouteTable: 'rt-app-${suffix}'
+  buildAgentVmNamePrefix: 'ssapbuild'
   buildAgentVmNic: 'nic-build-agent-${suffix}'
   buildAgentVmScaleSet: 'vmss-build-agent-${suffix}'
   firewall: 'afw-${suffix}'
@@ -36,7 +37,7 @@ var naming = {
   sqlManagedInstance: 'sql-${suffix}'
   storageAccount: 'sa${suffix}'
   storageAccountPrivateEndpoint: 'sa-pe-blob-${suffix}'
-  storageWebAppAuthenticationContainer: 'webAppAuth'
+  storageWebAppAuthenticationContainer: 'webappauth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
 }
@@ -103,11 +104,12 @@ module hubVnet 'modules/hubVnet.bicep' = {
     naming: naming
     addressSpace: vnetAddressSpaces.hub
     subnets: hubSubnets
+    appVnetAddressSpace: vnetAddressSpaces.app
   }
 }
 
 module firewall 'modules/firewall.bicep' = {
-  name: 'firewall'
+  name: '${deployment().name}-firewall'
   params: {
     location: location
     naming: naming

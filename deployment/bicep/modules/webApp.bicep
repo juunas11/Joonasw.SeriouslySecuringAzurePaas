@@ -55,6 +55,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       scmMinTlsVersion: '1.2'
     }
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
 }
 
 resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

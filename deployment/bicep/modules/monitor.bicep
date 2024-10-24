@@ -43,7 +43,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 resource privateLinkScope 'Microsoft.Insights/privateLinkScopes@2021-07-01-preview' = {
-  location: location
+  location: 'global'
   name: naming.logAnalyticsPrivateLinkScope
   properties: {
     accessModeSettings: {
@@ -138,6 +138,7 @@ resource monitorDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
 resource hubMonitorDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: monitorDnsZone
   name: 'link_to_${hubVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -149,6 +150,7 @@ resource hubMonitorDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwork
 resource appMonitorDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: monitorDnsZone
   name: 'link_to_${appVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -166,6 +168,7 @@ resource omsDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
 resource hubOmsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: omsDnsZone
   name: 'link_to_${hubVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -177,6 +180,7 @@ resource hubOmsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLink
 resource appOmsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: omsDnsZone
   name: 'link_to_${appVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -194,6 +198,7 @@ resource odsDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
 resource hubOdsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: odsDnsZone
   name: 'link_to_${hubVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -205,6 +210,7 @@ resource hubOdsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLink
 resource appOdsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: odsDnsZone
   name: 'link_to_${appVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -222,6 +228,7 @@ resource agentSvcDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
 resource hubAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: agentSvcDnsZone
   name: 'link_to_${hubVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {
@@ -233,6 +240,7 @@ resource hubAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwor
 resource appAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: agentSvcDnsZone
   name: 'link_to_${appVnetName}'
+  location: 'global'
   properties: {
     registrationEnabled: false
     virtualNetwork: {

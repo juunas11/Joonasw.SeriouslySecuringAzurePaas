@@ -6,6 +6,11 @@ $tenantId = $config.tenantId
 $subscriptionId = $config.subscriptionId
 $resourceGroup = $config.resourceGroup
 $domainName = $config.domainName
+$sqlAdminGroupName = $config.sqlAdminGroupName
+$sqlAdminGroupId = $config.sqlAdminGroupId
+$buildAgentAdminUsername = $config.buildAgentAdminUsername
+# TODO: Get this through secure string (user input)
+$buildAgentAdminPassword = $config.buildAgentAdminPassword
 
 # Get PFX as base 64 encoded string
 $certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $PSScriptRoot cert.pfx)))

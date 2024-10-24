@@ -281,6 +281,10 @@ resource storageKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01'
   }
 }
 
+// TODO: Fix SQL NSG and route table somehow
+// Currently we get errors due to SQL MI adding routes and NSG rules and refusing their removal
+// Need to check how these should be configured from some samples
+
 resource routeTable 'Microsoft.Network/routeTables@2024-01-01' = {
   name: naming.appVnetRouteTable
   location: location
@@ -353,6 +357,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           routeTable: {
             id: routeTable.id
           }
+          delegations: [
+            {
+              name: 'Microsoft.Sql/managedInstances'
+              properties: {
+                serviceName: 'Microsoft.Sql/managedInstances'
+              }
+            }
+          ]
         }
       }
       {

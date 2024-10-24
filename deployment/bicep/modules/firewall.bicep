@@ -40,6 +40,62 @@ resource firewallPolicy 'Microsoft.Network/firewallPolicies@2024-01-01' = {
   }
 }
 
+resource dnatAppRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
+  parent: firewallPolicy
+  name: 'dnat-app-gateway-collection'
+  properties: {
+    priority: 100
+    ruleCollections: [
+      {
+        ruleCollectionType: 'FirewallPolicyNatRuleCollection'
+        priority: 100
+        name: 'DNAT to App Gateway'
+        action: {
+          type: 'DNAT'
+        }
+        rules: [
+          {
+            ruleType: 'NatRule'
+            name: 'DNAT HTTP to App Gateway'
+            destinationAddresses: [
+              firewallPip.properties.ipAddress
+            ]
+            destinationPorts: [
+              '80'
+            ]
+            sourceAddresses: [
+              '*'
+            ]
+            translatedAddress: appGatewayPrivateIpAddress
+            translatedPort: '80'
+            ipProtocols: [
+              'TCP'
+            ]
+          }
+          {
+            ruleType: 'NatRule'
+            name: 'DNAT HTTPS to App Gateway'
+            destinationAddresses: [
+              firewallPip.properties.ipAddress
+            ]
+            destinationPorts: [
+              '443'
+            ]
+            sourceAddresses: [
+              '*'
+            ]
+            translatedAddress: appGatewayPrivateIpAddress
+            translatedPort: '443'
+            ipProtocols: [
+              'TCP'
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
 resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
   name: naming.firewall
   location: location
@@ -75,30 +131,6 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
     firewallPolicy: {
       id: firewallPolicy.id
     }
-    natRuleCollections: [
-      {
-        name: ''
-        properties: {
-          rules: [
-            {
-              name: 'DNAT to App Gateway'
-              description: 'Guides traffic to Firewall Public IP to App Gateway'
-              destinationAddresses: [
-                firewallPip.properties.ipAddress
-              ]
-              destinationPorts: [
-                '80'
-                '443'
-              ]
-              translatedAddress: appGatewayPrivateIpAddress
-              protocols: [
-                'TCP'
-              ]
-            }
-          ]
-        }
-      }
-    ]
   }
 }
 
