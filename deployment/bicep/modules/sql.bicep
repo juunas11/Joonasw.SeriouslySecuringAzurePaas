@@ -14,6 +14,7 @@ param adminGroupId string
 // - not zone redundant
 
 // TODO: Check if we can grant the "Read" permissions for the MI that it needs. Can be done through Portal too, but is a manual step.
+// Yeah, we can. The system-assigned MI needs the "Directory Readers" role on the tenant.
 
 resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' = {
   name: naming.sqlManagedInstance

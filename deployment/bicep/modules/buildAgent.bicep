@@ -8,6 +8,8 @@ param adminUsername string
 @secure()
 param adminPassword string
 
+// TODO: Swap this for managed DevOps pool
+
 resource vmScaleSet 'Microsoft.Compute/virtualMachineScaleSets@2024-07-01' = {
   name: naming.buildAgentVmScaleSet
   location: location

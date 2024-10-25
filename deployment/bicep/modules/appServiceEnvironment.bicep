@@ -4,8 +4,6 @@ param naming object
 param vnetName string
 param subnetName string
 
-// TODO: Private DNS zone for the app service environment
-
 // Deploying this can take 3 hours
 resource appServiceEnvironment 'Microsoft.Web/hostingEnvironments@2023-12-01' = {
   name: naming.appServiceEnvironment
@@ -35,17 +33,20 @@ resource appServiceEnvironment 'Microsoft.Web/hostingEnvironments@2023-12-01' = 
         name: 'DisableTls1.0'
         value: '1'
       }
-      // You _could_ do this
-      // But it might be a bit too far.
-      //   {
-      //     // Only support these two cipher suites
-      //     name: 'FrontEndSSLCipherSuiteOrder'
-      //     value: 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
-      //   }
     ]
 
     // Run on dedicated hardware, costs a lot more
     // dedicatedHostCount: 2
+  }
+}
+
+module appServiceEnvironmentDns './appServiceEnvironmentDns.bicep' = {
+  name: 'appServiceEnvironmentDns'
+  params: {
+    location: location
+    appServiceEnvironmentDnsSuffix: appServiceEnvironment.properties.dnsSuffix
+    // TODO: Check this, could be wrong
+    appServiceEnvironmentIpAddress: appServiceEnvironment.properties.networkingConfiguration.properties.internalInboundIpAddresses[0]
   }
 }
 

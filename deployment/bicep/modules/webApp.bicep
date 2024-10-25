@@ -5,6 +5,7 @@ param appServiceEnvironmentResourceId string
 param appServicePlanResourceId string
 param keyVaultResourceId string
 param storageAccountResourceId string
+param subnets object
 
 var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
@@ -16,8 +17,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
 }
-
-// TODO: Access restrictions need to allow direct connections from VNET, not just over private endpoints
 
 resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   name: naming.webApp
@@ -48,13 +47,31 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       ]
       alwaysOn: true
       ftpsState: 'Disabled'
-      // We could require 1.3 and a higher minimum cipher suite,
-      // but it feels a bit excessive.
-      // This is still within best practices.
-      minTlsVersion: '1.2'
-      minTlsCipherSuite: 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
+      // Require TLS 1.3 for incoming connections
+      // (TLS 1.2 would be enough for most cases)
+      // (Do check your minimum cipher suite such that all of them support authenticated encryption and forward secrecy)
+      minTlsVersion: '1.3'
       remoteDebuggingEnabled: false
-      scmMinTlsVersion: '1.2'
+      scmMinTlsVersion: '1.3'
+      // TODO: Check these produce the settings we want
+      ipSecurityRestrictions: [
+        {
+          name: 'AllowTrafficFromAppGateway'
+          ipAddress: subnets.appGateway.addressPrefix
+          action: 'Allow'
+          priority: 100
+        }
+      ]
+      ipSecurityRestrictionsDefaultAction: 'Deny'
+      scmIpSecurityRestrictions: [
+        {
+          name: 'AllowTrafficFromBuildAgent'
+          ipAddress: subnets.buildAgent.addressPrefix
+          action: 'Allow'
+          priority: 100
+        }
+      ]
+      scmIpSecurityRestrictionsDefaultAction: 'Deny'
     }
   }
   identity: {

@@ -10,7 +10,32 @@ param subnets object
 param hubSubnets object
 param firewallPrivateIpAddress string
 
-// TODO: Add deny all inbound and outbound rules
+var denyAllInboundRule = {
+  name: 'DenyAllInbound'
+  properties: {
+    priority: 9001
+    direction: 'Inbound'
+    access: 'Deny'
+    protocol: '*'
+    sourceAddressPrefix: '*'
+    sourcePortRange: '*'
+    destinationAddressPrefix: '*'
+    destinationPortRange: '*'
+  }
+}
+var denyAllOutboundRule = {
+  name: 'DenyAllOutbound'
+  properties: {
+    priority: 9001
+    direction: 'Outbound'
+    access: 'Deny'
+    protocol: '*'
+    sourceAddressPrefix: '*'
+    sourcePortRange: '*'
+    destinationAddressPrefix: '*'
+    destinationPortRange: '*'
+  }
+}
 
 resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   name: 'nsg-app-${subnets.appServiceEnvironment.name}'
@@ -43,6 +68,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           destinationPortRange: '443'
         }
       }
+      denyAllInboundRule
       {
         name: 'AllowVnetHttpsOutbound'
         properties: {
@@ -82,6 +108,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           destinationPortRange: '1433'
         }
       }
+      denyAllOutboundRule
     ]
   }
 }
@@ -117,6 +144,7 @@ resource appGatewayNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      denyAllInboundRule
       {
         name: 'AllowAppServiceEnvironmentHttpsOutbound'
         properties: {
@@ -130,6 +158,7 @@ resource appGatewayNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      denyAllOutboundRule
     ]
   }
 }
@@ -191,6 +220,8 @@ resource createdSqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = if
           destinationPortRange: '11000-11999'
         }
       }
+      denyAllInboundRule
+      denyAllOutboundRule
     ]
   }
 }
@@ -213,6 +244,8 @@ resource appServiceKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-
           destinationPortRange: '443'
         }
       }
+      denyAllInboundRule
+      denyAllOutboundRule
       // TODO: Let's see if this is needed
       // {
       //   name: 'AllowBuildAgentHttpsInbound'
@@ -249,6 +282,8 @@ resource storageNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      denyAllInboundRule
+      denyAllOutboundRule
       // TODO: Let's see if this is needed
       // {
       //   name: 'AllowBuildAgentHttpsInbound'
@@ -285,6 +320,8 @@ resource sqlKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      denyAllInboundRule
+      denyAllOutboundRule
       // TODO: Build agent?
     ]
   }
@@ -308,6 +345,8 @@ resource storageKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01'
           destinationPortRange: '443'
         }
       }
+      denyAllInboundRule
+      denyAllOutboundRule
     ]
   }
 }
@@ -479,5 +518,4 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   }
 }
 
-// TODO: NSGs, route tables, DNS
 output vnetResourceId string = vnet.id

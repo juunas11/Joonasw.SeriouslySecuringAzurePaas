@@ -260,6 +260,7 @@ module webApp 'modules/webApp.bicep' = {
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
     keyVaultResourceId: keyVault.outputs.keyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
+    subnets: appSubnets
   }
 }
 
