@@ -4,6 +4,8 @@ param naming object
 param vnetName string
 param subnetName string
 
+// TODO: Private DNS zone for the app service environment
+
 // Deploying this can take 3 hours
 resource appServiceEnvironment 'Microsoft.Web/hostingEnvironments@2023-12-01' = {
   name: naming.appServiceEnvironment

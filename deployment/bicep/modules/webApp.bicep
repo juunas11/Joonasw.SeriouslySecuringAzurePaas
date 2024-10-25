@@ -17,6 +17,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing 
   name: storageAccountName
 }
 
+// TODO: Access restrictions need to allow direct connections from VNET, not just over private endpoints
+
 resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   name: naming.webApp
   location: location

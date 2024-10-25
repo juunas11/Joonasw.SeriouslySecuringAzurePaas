@@ -13,6 +13,9 @@ param buildAgentAdminUsername string
 @secure()
 param buildAgentAdminPassword string
 
+param sqlNsgResourceId string
+param sqlRouteTableResourceId string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
@@ -21,6 +24,7 @@ var naming = {
   appServicePlan: 'asp-${suffix}'
   appVnet: 'vnet-app-${suffix}'
   appVnetRouteTable: 'rt-app-${suffix}'
+  appVnetSqlRouteTable: 'rt-app-sql-${suffix}'
   buildAgentVmNamePrefix: 'ssapbuild'
   buildAgentVmNic: 'nic-build-agent-${suffix}'
   buildAgentVmScaleSet: 'vmss-build-agent-${suffix}'
@@ -129,6 +133,8 @@ module appVnet 'modules/appVnet.bicep' = {
     subnets: appSubnets
     hubSubnets: hubSubnets
     firewallPrivateIpAddress: firewall.outputs.firewallPrivateIpAddress
+    sqlNsgResourceId: sqlNsgResourceId
+    sqlRouteTableResourceId: sqlRouteTableResourceId
   }
 }
 

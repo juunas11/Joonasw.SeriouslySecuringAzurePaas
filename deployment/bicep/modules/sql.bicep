@@ -12,6 +12,9 @@ param adminGroupId string
 // - 4-8 vCores
 // - default maintenance window
 // - not zone redundant
+
+// TODO: Check if we can grant the "Read" permissions for the MI that it needs. Can be done through Portal too, but is a manual step.
+
 resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' = {
   name: naming.sqlManagedInstance
   location: location

@@ -26,8 +26,7 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
     policySettings: {
       requestBodyCheck: true
       maxRequestBodySizeInKb: 128
-      // We don't have file uploads
-      fileUploadLimitInMb: 0
+      fileUploadLimitInMb: 1
       state: 'Enabled'
       mode: 'Prevention'
     }

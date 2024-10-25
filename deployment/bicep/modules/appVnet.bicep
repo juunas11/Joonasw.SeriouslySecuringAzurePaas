@@ -1,11 +1,16 @@
 param location string
 param naming object
 
+param sqlNsgResourceId string
+param sqlRouteTableResourceId string
+
 param addressSpace string
 param hubAddressSpace string
 param subnets object
 param hubSubnets object
 param firewallPrivateIpAddress string
+
+// TODO: Add deny all inbound and outbound rules
 
 resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   name: 'nsg-app-${subnets.appServiceEnvironment.name}'
@@ -129,13 +134,13 @@ resource appGatewayNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   }
 }
 
-resource sqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+resource createdSqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = if (empty(sqlNsgResourceId)) {
   name: 'nsg-app-${subnets.sql.name}'
   location: location
   properties: {
     securityRules: [
       {
-        name: 'AllowAppServiceEnvironmentSqlInbound'
+        name: 'AllowAppServiceEnvironmentTdsInbound'
         properties: {
           priority: 100
           direction: 'Inbound'
@@ -148,9 +153,22 @@ resource sqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
         }
       }
       {
-        name: 'AllowBuildAgentSqlInbound'
+        name: 'AllowAppServiceEnvironmentRedirectInbound'
         properties: {
           priority: 200
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: subnets.appServiceEnvironment.addressPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '11000-11999'
+        }
+      }
+      {
+        name: 'AllowBuildAgentTdsInbound'
+        properties: {
+          priority: 300
           direction: 'Inbound'
           access: 'Allow'
           protocol: 'Tcp'
@@ -158,6 +176,19 @@ resource sqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '1433'
+        }
+      }
+      {
+        name: 'AllowBuildAgentRedirectInbound'
+        properties: {
+          priority: 400
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: subnets.buildAgent.addressPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '11000-11999'
         }
       }
     ]
@@ -305,6 +336,26 @@ resource routeTable 'Microsoft.Network/routeTables@2024-01-01' = {
   }
 }
 
+resource createdSqlRouteTable 'Microsoft.Network/routeTables@2024-01-01' = if (empty(sqlRouteTableResourceId)) {
+  name: naming.appVnetSqlRouteTable
+  location: location
+  properties: {
+    disableBgpRoutePropagation: true
+    routes: [
+      {
+        name: 'routeToFirewall'
+        type: 'Microsoft.Network/routeTables/routes'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: firewallPrivateIpAddress
+          hasBgpOverride: false
+        }
+      }
+    ]
+  }
+}
+
 resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
   name: naming.appVnet
   location: location
@@ -352,10 +403,10 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
         properties: {
           addressPrefix: subnets.sql.addressPrefix
           networkSecurityGroup: {
-            id: sqlNsg.id
+            id: empty(sqlNsgResourceId) ? createdSqlNsg.id : sqlNsgResourceId
           }
           routeTable: {
-            id: routeTable.id
+            id: empty(sqlRouteTableResourceId) ? createdSqlRouteTable.id : sqlRouteTableResourceId
           }
           delegations: [
             {

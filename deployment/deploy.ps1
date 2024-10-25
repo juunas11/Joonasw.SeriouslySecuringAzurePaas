@@ -27,7 +27,14 @@ if ($LASTEXITCODE -ne 0) {
 
 Push-Location -Path (Join-Path $PSScriptRoot bicep)
 
+## Get SQL NSG and Route Table resource IDs
+$sqlNsg = az network nsg list -g "$resourceGroup" --subscription "$subscriptionId" --query "[].{id:id,name:name}" | ConvertFrom-Json | Where-Object { $_.name -eq 'nsg-app-sql' }
+$sqlRouteTable = az network route-table list -g "$resourceGroup" --subscription "$subscriptionId" --query "[].{id:id,name:name}" | ConvertFrom-Json | Where-Object { $_.name.StartsWith('rt-app-sql') }
+
 $deploymentNamePrefix = Get-Date -Format "yyyy-MM-dd-HH-mm-ss"
+
+$sqlNsgResourceId = $sqlNsg.id
+$sqlRouteTableResourceId = $sqlRouteTable.id
 
 $mainBicepResult = az deployment group create `
     --subscription "$subscriptionId" `
@@ -39,7 +46,9 @@ $mainBicepResult = az deployment group create `
     -p sqlAdminGroupName=$sqlAdminGroupName `
     -p sqlAdminGroupId=$sqlAdminGroupId `
     -p buildAgentAdminUsername=$buildAgentAdminUsername `
-    -p buildAgentAdminPassword=$buildAgentAdminPassword | ConvertFrom-Json
+    -p buildAgentAdminPassword=$buildAgentAdminPassword `
+    -p sqlNsgResourceId=$sqlNsgResourceId `
+    -p sqlRouteTableResourceId=$sqlRouteTableResourceId | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
     throw "Failed to deploy main.bicep."
