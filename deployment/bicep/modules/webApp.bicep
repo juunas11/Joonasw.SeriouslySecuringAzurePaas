@@ -6,6 +6,8 @@ param appServicePlanResourceId string
 param keyVaultResourceId string
 param storageAccountResourceId string
 param subnets object
+param appServiceEnvironmentDnsZoneResourceId string
+param appServiceEnvironmentIpAddress string
 
 var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
@@ -29,7 +31,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     }
     clientAffinityEnabled: false
     httpsOnly: true
-    publicNetworkAccess: 'Disabled'
+    // Allow direct access through App Service Environment private IP address
+    // This does not allow access from Internet as there is no public endpoint
+    publicNetworkAccess: 'Enabled'
     siteConfig: {
       appSettings: [
         {
@@ -76,6 +80,15 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   }
   identity: {
     type: 'SystemAssigned'
+  }
+}
+
+module webAppDns './webAppDns.bicep' = {
+  name: 'webAppDns'
+  params: {
+    webAppFqdn: webApp.properties.defaultHostName
+    appServiceEnvironmentDnsZoneResourceId: appServiceEnvironmentDnsZoneResourceId
+    appServiceEnvironmentIpAddress: appServiceEnvironmentIpAddress
   }
 }
 

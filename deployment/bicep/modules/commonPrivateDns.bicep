@@ -16,6 +16,11 @@ resource storageBlobDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   properties: {}
 }
 
+resource appServiceEnvironmentDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'appserviceenvironment.net'
+  location: 'global'
+}
+
 resource appKeyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: keyVaultDnsZone
   name: 'link_to_${appVnetName}'
@@ -52,5 +57,18 @@ resource hubStorageBlobDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNet
   }
 }
 
+resource appAppServiceEnvironmentDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: appServiceEnvironmentDnsZone
+  name: 'link_to_${appVnetName}'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: appVnetResourceId
+    }
+  }
+}
+
 output keyVaultDnsZoneResourceId string = keyVaultDnsZone.id
 output storageBlobDnsZoneResourceId string = storageBlobDnsZone.id
+output appServiceEnvironmentDnsZoneResourceId string = appServiceEnvironmentDnsZone.id

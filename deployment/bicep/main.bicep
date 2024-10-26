@@ -262,6 +262,8 @@ module webApp 'modules/webApp.bicep' = {
     keyVaultResourceId: keyVault.outputs.keyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
     subnets: appSubnets
+    appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
+    appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
   }
 }
 

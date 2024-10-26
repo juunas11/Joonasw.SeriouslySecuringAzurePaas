@@ -146,6 +146,20 @@ resource appGatewayNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      // Azure Load Balancer must be allowed for App Gateway v2 SKU
+      {
+        name: 'AllowAzureLoadBalancerInbound'
+        properties: {
+          priority: 300
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: 'AzureLoadBalancer'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+        }
+      }
       denyAllInboundRule
       {
         name: 'AllowAppServiceEnvironmentHttpsOutbound'

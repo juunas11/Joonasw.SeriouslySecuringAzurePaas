@@ -45,7 +45,13 @@ You should also have the code in a GitHub repository or Azure DevOps repository 
 Then we can create the pipeline:
 
 1. Go to Pipelines -> Pipelines
-1. Create pipeline
+1. Create pipeline / New pipeline
 1. Where is your code? Choose your location.
 1. Select your repository
-1. 
+1. Configure your pipeline: Existing Azure Pipelines YAML file
+1. Branch: main
+1. Path: /deployment/pipelines/build-and-release.yaml
+1. Continue
+1. Save the pipeline
+
+When the pipeline runs for the first time, you will have to approve access to the agent pool.
