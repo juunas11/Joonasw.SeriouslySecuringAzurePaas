@@ -13,7 +13,7 @@ param firewallPrivateIpAddress string
 var denyAllInboundRule = {
   name: 'DenyAllInbound'
   properties: {
-    priority: 9001
+    priority: 4096
     direction: 'Inbound'
     access: 'Deny'
     protocol: '*'
@@ -26,7 +26,7 @@ var denyAllInboundRule = {
 var denyAllOutboundRule = {
   name: 'DenyAllOutbound'
   properties: {
-    priority: 9001
+    priority: 4096
     direction: 'Outbound'
     access: 'Deny'
     protocol: '*'

@@ -8,13 +8,12 @@ param appGatewayCertificateData string
 @secure()
 param appGatewayCertificatePassword string
 
-@secure()
-param buildAgentAdminUsername string
-@secure()
-param buildAgentAdminPassword string
-
 param sqlNsgResourceId string
 param sqlRouteTableResourceId string
+
+param azureDevOpsOrganizationUrl string
+param azureDevOpsProjectName string
+param devCenterProjectResourceId string
 
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
@@ -196,8 +195,9 @@ module buildAgent 'modules/buildAgent.bicep' = {
     naming: naming
     vnetName: naming.appVnet
     subnetName: appSubnets.buildAgent.name
-    adminUsername: buildAgentAdminUsername
-    adminPassword: buildAgentAdminPassword
+    azureDevOpsOrganizationUrl: azureDevOpsOrganizationUrl
+    azureDevOpsProjectName: azureDevOpsProjectName
+    devCenterProjectResourceId: devCenterProjectResourceId
   }
   dependsOn: [
     appVnet

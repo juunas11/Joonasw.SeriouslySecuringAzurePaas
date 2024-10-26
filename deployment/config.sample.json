@@ -4,8 +4,10 @@
   "resourceGroup": "",
   "location": "northeurope",
   "domainName": "",
-  "sqlAdminGroupName": "",
   "sqlAdminGroupId": "",
-  "buildAgentAdminUsername": "",
-  "buildAgentAdminPassword": ""
+  "sqlAdminGroupName": "",
+  "devCenterName": "ssap-dev-center",
+  "devCenterProjectName": "ssap-todo-app",
+  "azureDevOpsOrganizationUrl": "https://dev.azure.com/yourorg",
+  "azureDevOpsProjectName": ""
 }
