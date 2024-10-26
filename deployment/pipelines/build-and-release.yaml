@@ -1,0 +1,15 @@
+name: "Build-Release-Todo-App-$(Build.BuildId)"
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  name: "devops-pool-axt47xbf2ffoi"
+
+steps:
+  - checkout: self
+  - pwsh: |
+      Write-Host "Hello, World!"
+    displayName: "Test"

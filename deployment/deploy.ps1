@@ -77,6 +77,17 @@ if ($null -eq $devCenterProjectId) {
 
 Write-Host "Dev Center project ID: $devCenterProjectId"
 
+# Get DevOpsInfrastructure service principal ID
+
+$devOpsInfrastructureSpId = az ad sp list --filter "displayName eq 'DevOpsInfrastructure'" --query "[].id" -o tsv
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to get DevOpsInfrastructure service principal ID."
+}
+
+if ($null -eq $devOpsInfrastructureSpId) {
+    throw "DevOpsInfrastructure service principal not found."
+}
+
 # Deploy Bicep template
 
 Push-Location -Path (Join-Path $PSScriptRoot bicep)
@@ -104,7 +115,8 @@ $mainBicepResult = az deployment group create `
     -p sqlRouteTableResourceId=$sqlRouteTableResourceId `
     -p azureDevOpsOrganizationUrl=$azureDevOpsOrganizationUrl `
     -p azureDevOpsProjectName=$azureDevOpsProjectName `
-    -p devCenterProjectResourceId=$devCenterProjectId | ConvertFrom-Json
+    -p devCenterProjectResourceId=$devCenterProjectId `
+    -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId | ConvertFrom-Json
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location

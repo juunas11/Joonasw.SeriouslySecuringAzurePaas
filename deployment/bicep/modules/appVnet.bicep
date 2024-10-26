@@ -10,6 +10,8 @@ param subnets object
 param hubSubnets object
 param firewallPrivateIpAddress string
 
+param devOpsInfrastructureSpId string
+
 var denyAllInboundRule = {
   name: 'DenyAllInbound'
   properties: {
@@ -512,9 +514,45 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           routeTable: {
             id: routeTable.id
           }
+          delegations: [
+            {
+              name: 'Microsoft.DevOpsInfrastructure/pools'
+              properties: {
+                serviceName: 'Microsoft.DevOpsInfrastructure/pools'
+              }
+            }
+          ]
         }
       }
     ]
+  }
+}
+
+resource devOpsInfrastructureReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(devOpsInfrastructureSpId, vnet.id, 'Reader')
+  scope: vnet
+  properties: {
+    principalId: devOpsInfrastructureSpId
+    principalType: 'ServicePrincipal'
+    // Reader role
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'acdd72a7-3385-48ef-bd42-f606fba81ae7'
+    )
+  }
+}
+
+resource devOpsInfrastructureNetworkContibutorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(devOpsInfrastructureSpId, vnet.id, 'Network Contributor')
+  scope: vnet
+  properties: {
+    principalId: devOpsInfrastructureSpId
+    principalType: 'ServicePrincipal'
+    // Network Contributor role
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '4d97b98b-1d4f-4787-a291-c67834d212e7'
+    )
   }
 }
 

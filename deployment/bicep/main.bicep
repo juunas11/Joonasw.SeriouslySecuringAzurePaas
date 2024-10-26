@@ -15,6 +15,8 @@ param azureDevOpsOrganizationUrl string
 param azureDevOpsProjectName string
 param devCenterProjectResourceId string
 
+param devOpsInfrastructureSpId string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
@@ -24,9 +26,7 @@ var naming = {
   appVnet: 'vnet-app-${suffix}'
   appVnetRouteTable: 'rt-app-${suffix}'
   appVnetSqlRouteTable: 'rt-app-sql-${suffix}'
-  buildAgentVmNamePrefix: 'ssapbuild'
-  buildAgentVmNic: 'nic-build-agent-${suffix}'
-  buildAgentVmScaleSet: 'vmss-build-agent-${suffix}'
+  buildAgentPool: 'devops-pool-${suffix}'
   firewall: 'afw-${suffix}'
   firewallManagementPip: 'pip-afw-mgmt-${suffix}'
   firewallPip: 'pip-afw-${suffix}'
@@ -134,6 +134,7 @@ module appVnet 'modules/appVnet.bicep' = {
     firewallPrivateIpAddress: firewall.outputs.firewallPrivateIpAddress
     sqlNsgResourceId: sqlNsgResourceId
     sqlRouteTableResourceId: sqlRouteTableResourceId
+    devOpsInfrastructureSpId: devOpsInfrastructureSpId
   }
 }
 

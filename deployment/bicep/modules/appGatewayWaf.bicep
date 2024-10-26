@@ -246,8 +246,14 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
       // Require TLS 1.3
       // (Using a predefined policy that requires 1.2+ would be enough for most cases)
       // (Do check the ciphers support authenticated encryption and forward secrecy though)
-      policyType: 'CustomV2'
-      minProtocolVersion: 'TLSv1_3'
+      policyType: 'Predefined'
+      policyName: 'AppGwSslPolicy20220101S'
+      // policyType: 'CustomV2'
+      // minProtocolVersion: 'TLSv1_3'
+      // cipherSuites: [
+      //   'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
+      //   'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384'
+      // ]
     }
   }
 }

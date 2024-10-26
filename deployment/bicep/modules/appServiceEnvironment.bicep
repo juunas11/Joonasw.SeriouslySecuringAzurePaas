@@ -43,10 +43,10 @@ resource appServiceEnvironment 'Microsoft.Web/hostingEnvironments@2023-12-01' = 
 module appServiceEnvironmentDns './appServiceEnvironmentDns.bicep' = {
   name: 'appServiceEnvironmentDns'
   params: {
-    location: location
     appServiceEnvironmentDnsSuffix: appServiceEnvironment.properties.dnsSuffix
     // TODO: Check this, could be wrong
-    appServiceEnvironmentIpAddress: appServiceEnvironment.properties.networkingConfiguration.properties.internalInboundIpAddresses[0]
+    #disable-next-line BCP053
+    appServiceEnvironmentIpAddress: appServiceEnvironment.properties.networkingConfiguration.internalInboundIpAddresses[0]
   }
 }
 

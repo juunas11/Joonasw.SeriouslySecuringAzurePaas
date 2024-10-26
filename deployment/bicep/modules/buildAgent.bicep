@@ -10,9 +10,6 @@ param devCenterProjectResourceId string
 resource managedDevopsPool 'Microsoft.DevOpsInfrastructure/pools@2024-04-04-preview' = {
   location: location
   name: naming.buildAgentPool
-  identity: {
-    type: 'SystemAssigned'
-  }
   properties: {
     organizationProfile: {
       kind: 'AzureDevOps'

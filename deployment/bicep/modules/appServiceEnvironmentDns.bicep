@@ -1,9 +1,8 @@
-param location string
 param appServiceEnvironmentDnsSuffix string
 param appServiceEnvironmentIpAddress string
 
 resource dnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-  location: location
+  location: 'global'
   name: appServiceEnvironmentDnsSuffix
 }
 
