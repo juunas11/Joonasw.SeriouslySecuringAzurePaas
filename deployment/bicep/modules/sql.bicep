@@ -41,6 +41,7 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
     hybridSecondaryUsage: 'Active'
     collation: 'SQL_Latin1_General_CP1_CI_AS'
     proxyOverride: 'Proxy'
+    // 1.2 is highest supported version
     minimalTlsVersion: '1.2'
     timezoneId: 'UTC'
     requestedBackupStorageRedundancy: 'Local'
@@ -59,6 +60,8 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
     }
   }
 }
+
+output sqlManagedInstanceIdentityObjectId string = sqlManagedInstance.identity.principalId
 
 // I think the name here is not correct
 // resource dnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {

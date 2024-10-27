@@ -21,6 +21,11 @@ resource appServiceEnvironmentDnsZone 'Microsoft.Network/privateDnsZones@2024-06
   location: 'global'
 }
 
+resource appServiceDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'privatelink.azurewebsites.net'
+  location: 'global'
+}
+
 resource appKeyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: keyVaultDnsZone
   name: 'link_to_${appVnetName}'
@@ -69,6 +74,19 @@ resource appAppServiceEnvironmentDnsZoneLink 'Microsoft.Network/privateDnsZones/
   }
 }
 
+resource appAppServiceDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: appServiceDnsZone
+  name: 'link_to_${appVnetName}'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: appVnetResourceId
+    }
+  }
+}
+
 output keyVaultDnsZoneResourceId string = keyVaultDnsZone.id
 output storageBlobDnsZoneResourceId string = storageBlobDnsZone.id
 output appServiceEnvironmentDnsZoneResourceId string = appServiceEnvironmentDnsZone.id
+output appServiceDnsZoneResourceId string = appServiceDnsZone.id

@@ -44,19 +44,19 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
   location: location
   properties: {
     securityRules: [
-      {
-        name: 'AllowAppGatewayHttpsInbound'
-        properties: {
-          priority: 100
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: subnets.appGateway.addressPrefix
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '443'
-        }
-      }
+      // {
+      //   name: 'AllowAppGatewayHttpsInbound'
+      //   properties: {
+      //     priority: 100
+      //     direction: 'Inbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: subnets.appGateway.addressPrefix
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: '*'
+      //     destinationPortRange: '443'
+      //   }
+      // }
       {
         name: 'AllowBuildAgentHttpsInbound'
         properties: {
@@ -70,9 +70,97 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           destinationPortRange: '443'
         }
       }
+      {
+        // Internal health pings
+        name: 'AllowAzureLoadBalancerInbound'
+        properties: {
+          priority: 300
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: 'AzureLoadBalancer'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '80'
+        }
+      }
+      denyAllInboundRule
+      // {
+      //   name: 'AllowVnetHttpsOutbound'
+      //   properties: {
+      //     priority: 100
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: 'VirtualNetwork'
+      //     destinationPortRange: '443'
+      //   }
+      // }
+      // {
+      //   name: 'AllowHubHttpsOutbound'
+      //   properties: {
+      //     priority: 200
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: hubAddressSpace
+      //     destinationPortRange: '443'
+      //   }
+      // }
+      // {
+      //   name: 'AllowVnetSqlOutbound'
+      //   properties: {
+      //     priority: 300
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: 'VirtualNetwork'
+      //     destinationPortRange: '1433'
+      //   }
+      // }
+      denyAllOutboundRule
+    ]
+  }
+}
+
+resource webAppInboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+  name: 'nsg-app-${subnets.webAppInbound.name}'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowAppGatewayHttpsInbound'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: subnets.appGateway.addressPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '443'
+        }
+      }
+      denyAllInboundRule
+      denyAllOutboundRule
+    ]
+  }
+}
+
+resource webAppOutboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+  name: 'nsg-app-${subnets.webAppOutbound.name}'
+  location: location
+  properties: {
+    securityRules: [
       denyAllInboundRule
       {
-        name: 'AllowVnetHttpsOutbound'
+        name: 'AllowMonitorHttpsOutbound'
         properties: {
           priority: 100
           direction: 'Outbound'
@@ -80,12 +168,12 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           protocol: 'Tcp'
           sourceAddressPrefix: '*'
           sourcePortRange: '*'
-          destinationAddressPrefix: 'VirtualNetwork'
+          destinationAddressPrefix: hubSubnets.monitor.addressPrefix
           destinationPortRange: '443'
         }
       }
       {
-        name: 'AllowHubHttpsOutbound'
+        name: 'AllowSqlTdsOutbound'
         properties: {
           priority: 200
           direction: 'Outbound'
@@ -93,20 +181,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           protocol: 'Tcp'
           sourceAddressPrefix: '*'
           sourcePortRange: '*'
-          destinationAddressPrefix: hubAddressSpace
-          destinationPortRange: '443'
-        }
-      }
-      {
-        name: 'AllowVnetSqlOutbound'
-        properties: {
-          priority: 300
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: 'VirtualNetwork'
+          destinationAddressPrefix: subnets.sql.addressPrefix
           destinationPortRange: '1433'
         }
       }
@@ -469,6 +544,38 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
               name: 'Microsoft.Web/hostingEnvironments'
               properties: {
                 serviceName: 'Microsoft.Web/hostingEnvironments'
+              }
+            }
+          ]
+        }
+      }
+      {
+        name: subnets.webAppInbound.name
+        properties: {
+          addressPrefix: subnets.webAppInbound.addressPrefix
+          networkSecurityGroup: {
+            id: webAppInboundNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
+          }
+        }
+      }
+      {
+        name: subnets.webAppOutbound.name
+        properties: {
+          addressPrefix: subnets.webAppOutbound.addressPrefix
+          networkSecurityGroup: {
+            id: webAppOutboundNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
+          }
+          delegations: [
+            {
+              name: 'Microsoft.Web/serverFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
               }
             }
           ]

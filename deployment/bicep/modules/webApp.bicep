@@ -5,9 +5,11 @@ param appServiceEnvironmentResourceId string
 param appServicePlanResourceId string
 param keyVaultResourceId string
 param storageAccountResourceId string
+param appVnetName string
 param subnets object
-param appServiceEnvironmentDnsZoneResourceId string
-param appServiceEnvironmentIpAddress string
+param appServiceDnsZoneResourceId string
+// param appServiceEnvironmentDnsZoneResourceId string
+// param appServiceEnvironmentIpAddress string
 
 var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
@@ -31,9 +33,13 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     }
     clientAffinityEnabled: false
     httpsOnly: true
-    // Allow direct access through App Service Environment private IP address
-    // This does not allow access from Internet as there is no public endpoint
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: 'Disabled'
+    virtualNetworkSubnetId: resourceId(
+      'Microsoft.Network/virtualNetworks/subnets',
+      appVnetName,
+      subnets.app.webAppOutbound.name
+    )
+    vnetRouteAllEnabled: true
     siteConfig: {
       appSettings: [
         {
@@ -48,6 +54,10 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'StorageAccount__ContainerName'
           value: naming.storageWebAppAuthenticationContainer
         }
+        {
+          name: 'ConnectionStrings__Sql'
+          value: 'TODO'
+        }
       ]
       alwaysOn: true
       ftpsState: 'Disabled'
@@ -57,24 +67,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: '1.3'
       remoteDebuggingEnabled: false
       scmMinTlsVersion: '1.3'
-      // TODO: Check these produce the settings we want
-      ipSecurityRestrictions: [
-        {
-          name: 'AllowTrafficFromAppGateway'
-          ipAddress: subnets.appGateway.addressPrefix
-          action: 'Allow'
-          priority: 100
-        }
-      ]
       ipSecurityRestrictionsDefaultAction: 'Deny'
-      scmIpSecurityRestrictions: [
-        {
-          name: 'AllowTrafficFromBuildAgent'
-          ipAddress: subnets.buildAgent.addressPrefix
-          action: 'Allow'
-          priority: 100
-        }
-      ]
       scmIpSecurityRestrictionsDefaultAction: 'Deny'
     }
   }
@@ -83,14 +76,64 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
-module webAppDns './webAppDns.bicep' = {
-  name: 'webAppDns'
-  params: {
-    webAppFqdn: webApp.properties.defaultHostName
-    appServiceEnvironmentDnsZoneResourceId: appServiceEnvironmentDnsZoneResourceId
-    appServiceEnvironmentIpAddress: appServiceEnvironmentIpAddress
+// TODO: Private endpoint and DNS, VNET integration
+
+resource webAppPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
+  name: naming.webAppPrivateEndpoint
+  location: location
+  properties: {
+    subnet: {
+      id: resourceId('Microsoft.Network/virtualNetworks/subnets', appVnetName, subnets.app.webAppInbound.name)
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${naming.webApp}-privateLinkServiceConnection'
+        properties: {
+          privateLinkServiceId: webApp.id
+          groupIds: [
+            'sites'
+          ]
+        }
+      }
+    ]
   }
 }
+
+resource webAppPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
+  parent: webAppPrivateEndpoint
+  name: 'PrivateEndpointPrivateDnsZoneGroup'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-azurewebsites-net'
+        properties: {
+          privateDnsZoneId: appServiceDnsZoneResourceId
+        }
+      }
+    ]
+  }
+}
+
+// resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2023-12-01' = {
+//   parent: webApp
+//   name: 'virtualNetwork'
+//   properties: {
+//     subnetResourceId: resourceId(
+//       'Microsoft.Network/virtualNetworks/subnets',
+//       appVnetName,
+//       subnets.app.webAppOutbound.name
+//     )
+//   }
+// }
+
+// module webAppDns './webAppDns.bicep' = {
+//   name: 'webAppDns'
+//   params: {
+//     webAppFqdn: webApp.properties.defaultHostName
+//     appServiceEnvironmentDnsZoneResourceId: appServiceEnvironmentDnsZoneResourceId
+//     appServiceEnvironmentIpAddress: appServiceEnvironmentIpAddress
+//   }
+// }
 
 resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(naming.webApp, keyVault.id, 'Key Vault Crypto Service Encryption User')

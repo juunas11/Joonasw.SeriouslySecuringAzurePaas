@@ -25,6 +25,9 @@ if ($LASTEXITCODE -ne 0) {
     az login -t "$tenantId"
 }
 
+# TODO: Check if we already are logged in with correct scope
+Connect-MgGraph -TenantId "0d7e0754-812c-4a0f-883f-5f34cf78d354" -Scopes "RoleManagement.ReadWrite.Directory" -NoWelcome
+
 # Ensure resource group exists
 $rgExists = az group exists --subscription "$subscriptionId" -g "$resourceGroup"
 if ($LASTEXITCODE -ne 0) {
@@ -118,11 +121,30 @@ if ($LASTEXITCODE -ne 0) {
 
 $mainBicepOutputs = $mainBicepResult.properties.outputs
 
+$firewallPublicIpAddress = $mainBicepOutputs.firewallPublicIpAddress.value
+$sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdentityObjectId.value
+
 Pop-Location
 
-Write-Host "Deployment complete."
-Write-Host "You need to now set up a DNS A record: $domainName -> $($mainBicepOutputs.firewallPublicIpAddress.value)"
+## Assign Directory Readers role to SQL MI managed identity
 
-# az extension add --name azure-devops
-# az devops configure --defaults organization=https://dev.azure.com/contoso project=ContosoWebApp
-# Let's see if we setup everything in DevOps here or just write up the steps
+$directoryReadersRoleId = (Get-MgDirectoryRole -Filter "displayName eq 'Directory Readers'").Id
+if ($null -eq $directoryReadersRoleId) {
+    throw "Directory Readers role not found."
+}
+
+$directoryReadersRoleMember = Get-MgDirectoryRoleMember -DirectoryRoleId $directoryReadersRoleId | Where-Object { $_.Id -eq $sqlManagedInstanceIdentityObjectId }
+if ($null -ne $directoryReadersRoleMember) {
+    Write-Host "SQL MI managed identity is already a member of Directory Readers role."
+}
+else {
+    Write-Host "Adding SQL MI managed identity to Directory Readers role..."
+    $addRoleMemberBody = @{
+        "@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$sqlManagedInstanceIdentityObjectId"
+    }
+
+    New-MgDirectoryRoleMemberByRef -DirectoryRoleId $directoryReadersRoleId -BodyParameter $addRoleMemberBody
+}
+
+Write-Host "Deployment complete."
+Write-Host "You need to now set up a DNS A record: $domainName -> $firewallPublicIpAddress"

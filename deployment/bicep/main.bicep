@@ -43,6 +43,7 @@ var naming = {
   storageWebAppAuthenticationContainer: 'webappauth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
+  webAppPrivateEndpoint: 'app-pe-${suffix}'
 }
 
 var vnetAddressSpaces = {
@@ -73,29 +74,37 @@ var appSubnets = {
     name: 'appServiceEnvironment'
     addressPrefix: '10.0.4.64/26'
   }
+  webAppInbound: {
+    name: 'webAppInbound'
+    addressPrefix: '10.0.4.128/26'
+  }
+  webAppOutbound: {
+    name: 'webAppOutbound'
+    addressPrefix: '10.0.4.192/26'
+  }
   sql: {
     name: 'sql'
-    addressPrefix: '10.0.4.128/26'
+    addressPrefix: '10.0.5.0/26'
   }
   appServiceKeyVault: {
     name: 'appServiceKeyVault'
-    addressPrefix: '10.0.4.192/26'
+    addressPrefix: '10.0.5.64/26'
   }
   storage: {
     name: 'storage'
-    addressPrefix: '10.0.5.0/26'
+    addressPrefix: '10.0.5.128/26'
   }
   sqlKeyVault: {
     name: 'sqlKeyVault'
-    addressPrefix: '10.0.5.64/26'
+    addressPrefix: '10.0.5.192/26'
   }
   storageKeyVault: {
     name: 'storageKeyVault'
-    addressPrefix: '10.0.5.128/26'
+    addressPrefix: '10.0.6.0/26'
   }
   buildAgent: {
     name: 'buildAgent'
-    addressPrefix: '10.0.5.192/26'
+    addressPrefix: '10.0.6.64/26'
   }
 }
 var appGatewayPrivateIpAddress = '10.0.4.4'
@@ -263,8 +272,10 @@ module webApp 'modules/webApp.bicep' = {
     keyVaultResourceId: keyVault.outputs.keyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
     subnets: appSubnets
-    appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
-    appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
+    // appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
+    // appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
+    appVnetName: naming.appVnet
+    appServiceDnsZoneResourceId: commonPrivateDns.outputs.appServiceDnsZoneResourceId
   }
 }
 
@@ -286,3 +297,4 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
 }
 
 output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
+output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
