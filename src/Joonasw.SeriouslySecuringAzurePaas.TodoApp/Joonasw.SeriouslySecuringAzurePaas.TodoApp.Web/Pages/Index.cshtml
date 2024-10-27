@@ -1,10 +1,45 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Index";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div>
+    <h2>Create todo</h2>
+    <form class="mb-3">
+        @Html.TextBoxFor(m => m.NewTodoText, new
+        {
+            @class = "form-control"
+        })
+        <button type="submit" class="btn btn-primary mt-2">Create</button>
+    </form>
+    <h3>Todos</h3>
+    <table class="table table-bordered table-striped" style="width: 100%">
+        <thead>
+            <tr>
+                <th>Text</th>
+                <th>Is done</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.TodoItems.Count == 0)
+            {
+                <tr>
+                    <td colspan="3">No todos</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var todo in Model.TodoItems)
+                {
+                    <tr>
+                        <td>@todo.Text</td>
+                        <td>@todo.IsDone</td>
+                        <td></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 </div>

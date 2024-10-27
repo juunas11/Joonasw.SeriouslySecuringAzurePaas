@@ -18,6 +18,10 @@ public class TodoContext : DbContext
             .HasKey(t => t.Id);
 
         modelBuilder.Entity<TodoItem>()
+            .Property(t => t.Id)
+            .HasDefaultValueSql("NEWID()");
+
+        modelBuilder.Entity<TodoItem>()
             .Property(t => t.Text)
             .IsRequired()
             .HasMaxLength(200);

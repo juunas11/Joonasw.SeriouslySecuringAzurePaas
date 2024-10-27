@@ -1,5 +1,6 @@
 using Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data;
 using Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
@@ -20,13 +21,11 @@ public class IndexModel : PageModel
 
     public List<TodoItem> TodoItems { get; set; } = new();
 
+    [BindProperty]
+    public string? NewTodoText { get; set; }
+
     public async Task OnGet()
     {
-        if (!(User.Identity?.IsAuthenticated ?? false))
-        {
-            return;
-        }
-
         var tenantId = Guid.Parse(User.GetTenantId()!);
         var userId = Guid.Parse(User.GetObjectId()!);
 

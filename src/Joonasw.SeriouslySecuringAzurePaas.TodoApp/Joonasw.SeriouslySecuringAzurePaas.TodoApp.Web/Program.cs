@@ -1,5 +1,7 @@
+using Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 
@@ -25,8 +27,10 @@ public class Program
                     cookieOptions.ExpireTimeSpan = TimeSpan.FromMinutes(1);
                     cookieOptions.SlidingExpiration = false;
 
-                    // Only top-level navigation requests can set cookies.
-                    cookieOptions.Cookie.SameSite = SameSiteMode.Strict;
+                    // Cookies is added only with requests from the same domain
+                    // or from top level navigations from other sites.
+                    // Setting this to Strict causes Entra ID authentication loops.
+                    cookieOptions.Cookie.SameSite = SameSiteMode.Lax;
                     // Always over HTTPS.
                     cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                     // Don't allow Javascript to access the cookie.
@@ -42,6 +46,29 @@ public class Program
         });
         builder.Services.AddRazorPages()
             .AddMicrosoftIdentityUI();
+
+        builder.Services.AddDbContext<TodoContext>(options =>
+        {
+            options.UseSqlServer(builder.Configuration.GetConnectionString("Sql"));
+        });
+
+        if (!builder.Environment.IsDevelopment())
+        {
+            builder.Services.AddHsts(options =>
+            {
+                // How long browsers should cache the HSTS policy.
+                // They will automatically use HTTPS for the duration of this time.
+                options.MaxAge = TimeSpan.FromDays(365);
+
+                // In a production scenario, you might want to preload HSTS.
+                // _Be careful though, since you can't then use HTTP for any subdomains._
+                // See MDN for more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#preloading_strict_transport_security
+                options.Preload = false;
+
+                // This would need to be true for preload.
+                options.IncludeSubDomains = false;
+            });
+        }
 
         var app = builder.Build();
 

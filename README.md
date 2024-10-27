@@ -68,3 +68,7 @@ Register an app with the following details:
   - `https://your-app-domain/signin-oidc`
   - In production you should make separate app registrations for development and production use
 - Add a self-signed certificate for authentication
+
+## Local development
+
+`dotnet ef database update -s Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web -p Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data`
