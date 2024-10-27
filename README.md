@@ -55,3 +55,16 @@ Then we can create the pipeline:
 1. Save the pipeline
 
 When the pipeline runs for the first time, you will have to approve access to the agent pool.
+
+## Create Entra ID app registration
+
+The app uses Entra ID for authentication and thus requires an app registration.
+
+Register an app with the following details:
+
+- Redirect URIs
+  - Web platform
+  - `https://localhost:7258/signin-oidc`
+  - `https://your-app-domain/signin-oidc`
+  - In production you should make separate app registrations for development and production use
+- Add a self-signed certificate for authentication

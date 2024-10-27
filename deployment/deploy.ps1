@@ -48,9 +48,6 @@ if ($devCenterExtension -ne "devcenter") {
 }
 
 $devCenterId = az devcenter admin devcenter show -n "$devCenterName" -g "$resourceGroup" --subscription "$subscriptionId" --query "id" -o tsv
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to get Dev Center."
-}
 
 if ($null -eq $devCenterId) {
     Write-Host "Dev Center does not exist. Creating Dev Center..."
@@ -63,10 +60,6 @@ if ($null -eq $devCenterId) {
 Write-Host "Dev Center ID: $devCenterId"
 
 $devCenterProjectId = az devcenter admin project show -n "$devCenterProjectName" -g "$resourceGroup" --subscription "$subscriptionId" --query "id" -o tsv
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to get Dev Center project."
-}
-
 if ($null -eq $devCenterProjectId) {
     Write-Host "Dev Center project does not exist. Creating Dev Center project..."
     $devCenterProjectId = az devcenter admin project create -n "$devCenterProjectName" -g "$resourceGroup" --subscription "$subscriptionId" --dev-center-id "$devCenterId" --query "id" -o tsv

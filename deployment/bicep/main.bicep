@@ -119,6 +119,7 @@ module firewall 'modules/firewall.bicep' = {
     firewallSubnetResourceId: hubVnet.outputs.firewallSubnetResourceId
     firewallManagementSubnetResourceId: hubVnet.outputs.firewallManagementSubnetResourceId
     appGatewayPrivateIpAddress: appGatewayPrivateIpAddress
+    appSubnets: appSubnets
   }
 }
 

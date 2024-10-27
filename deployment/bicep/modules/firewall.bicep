@@ -4,6 +4,7 @@ param naming object
 param firewallSubnetResourceId string
 param firewallManagementSubnetResourceId string
 param appGatewayPrivateIpAddress string
+param appSubnets object
 
 resource firewallPip 'Microsoft.Network/publicIPAddresses@2024-01-01' = {
   name: naming.firewallPip
@@ -86,6 +87,42 @@ resource dnatAppRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectio
             ]
             translatedAddress: appGatewayPrivateIpAddress
             translatedPort: '443'
+            ipProtocols: [
+              'TCP'
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
+resource buildAgentRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
+  parent: firewallPolicy
+  name: 'build-agent-outbound-collection'
+  properties: {
+    priority: 200
+    ruleCollections: [
+      {
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        priority: 100
+        name: 'Allow build agent outbound'
+        action: {
+          type: 'Allow'
+        }
+        rules: [
+          {
+            ruleType: 'NetworkRule'
+            name: 'Allow build agent outbound'
+            destinationAddresses: [
+              '*'
+            ]
+            destinationPorts: [
+              '443'
+            ]
+            sourceAddresses: [
+              appSubnets.buildAgent.addressPrefix
+            ]
             ipProtocols: [
               'TCP'
             ]

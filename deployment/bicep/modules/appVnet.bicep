@@ -367,9 +367,42 @@ resource storageKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01'
   }
 }
 
-// TODO: Fix SQL NSG and route table somehow
-// Currently we get errors due to SQL MI adding routes and NSG rules and refusing their removal
-// Need to check how these should be configured from some samples
+resource buildAgentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+  name: 'nsg-app-${subnets.buildAgent.name}'
+  location: location
+  properties: {
+    securityRules: [
+      denyAllInboundRule
+      {
+        name: 'AllowAppServiceEnvironmentHttpsOutbound'
+        properties: {
+          priority: 100
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.appServiceEnvironment.addressPrefix
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'DenyVnetOutbound'
+        properties: {
+          priority: 200
+          direction: 'Outbound'
+          access: 'Deny'
+          protocol: '*'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: addressSpace
+          destinationPortRange: '*'
+        }
+      }
+      // Allow traffic destined out of the VNET
+    ]
+  }
+}
 
 resource routeTable 'Microsoft.Network/routeTables@2024-01-01' = {
   name: naming.appVnetRouteTable
@@ -527,6 +560,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.buildAgent.addressPrefix
           routeTable: {
             id: routeTable.id
+          }
+          networkSecurityGroup: {
+            id: buildAgentNsg.id
           }
           delegations: [
             {
