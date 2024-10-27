@@ -6,7 +6,7 @@ trigger:
       - main
 
 pool:
-  name: "devops-pool-axt47xbf2ffoi"
+  name: "devops-pool-757m7v3o4cgdk"
 
 steps:
   - checkout: self
