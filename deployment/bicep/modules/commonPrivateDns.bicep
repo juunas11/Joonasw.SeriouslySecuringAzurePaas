@@ -4,8 +4,14 @@ param appVnetResourceId string
 var hubVnetName = last(split(hubVnetResourceId, '/'))
 var appVnetName = last(split(appVnetResourceId, '/'))
 
-resource keyVaultDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-  name: 'privatelink.vaultcore.azure.net'
+// resource keyVaultDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+//   name: 'privatelink.vaultcore.azure.net'
+//   location: 'global'
+//   properties: {}
+// }
+
+resource managedHsmDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'privatelink.managedhsm.azure.net'
   location: 'global'
   properties: {}
 }
@@ -26,8 +32,20 @@ resource appServiceDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   location: 'global'
 }
 
-resource appKeyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
-  parent: keyVaultDnsZone
+// resource appKeyVaultDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+//   parent: keyVaultDnsZone
+//   name: 'link_to_${appVnetName}'
+//   location: 'global'
+//   properties: {
+//     registrationEnabled: false
+//     virtualNetwork: {
+//       id: appVnetResourceId
+//     }
+//   }
+// }
+
+resource appManagedHsmDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: managedHsmDnsZone
   name: 'link_to_${appVnetName}'
   location: 'global'
   properties: {
@@ -86,7 +104,8 @@ resource appAppServiceDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetw
   }
 }
 
-output keyVaultDnsZoneResourceId string = keyVaultDnsZone.id
+// output keyVaultDnsZoneResourceId string = keyVaultDnsZone.id
+output managedHsmDnsZoneResourceId string = managedHsmDnsZone.id
 output storageBlobDnsZoneResourceId string = storageBlobDnsZone.id
 output appServiceEnvironmentDnsZoneResourceId string = appServiceEnvironmentDnsZone.id
 output appServiceDnsZoneResourceId string = appServiceDnsZone.id

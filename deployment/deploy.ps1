@@ -84,6 +84,24 @@ if ($null -eq $devOpsInfrastructureSpId) {
     throw "DevOpsInfrastructure service principal not found."
 }
 
+# Get Key Vault key URI if it exists (used for session cookie encryption key encryption)
+$keyVaultKeyName = "DataProtectionKeyEncryptionKey"
+$keyVaultNamePrefix = "kv-app-dp-"
+
+$keyVaultName = az keyvault list -g "$resourceGroup" --subscription "$subscriptionId" --query "[].name" | ConvertFrom-Json | Where-Object { $_.StartsWith($keyVaultNamePrefix) }
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to get Key Vault name."
+}
+
+$keyVaultKeyUri = ""
+
+if ($null -ne $keyVaultKeyName) {
+    $keyVaultKeyUri = az keyvault key show --name "$keyVaultKeyName" --vault-name "$keyVaultName" --subscription "$subscriptionId" --query "key.kid" -o tsv
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to get Key Vault key."
+    }
+}
+
 # Deploy Bicep template
 
 Push-Location -Path (Join-Path $PSScriptRoot bicep)
@@ -112,7 +130,9 @@ $mainBicepResult = az deployment group create `
     -p azureDevOpsOrganizationUrl=$azureDevOpsOrganizationUrl `
     -p azureDevOpsProjectName=$azureDevOpsProjectName `
     -p devCenterProjectResourceId=$devCenterProjectId `
-    -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId | ConvertFrom-Json
+    -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId `
+    -p webAppDataProtectionKeyName=$keyVaultKeyName `
+    -p webAppDataProtectionKeyUri=$keyVaultKeyUri | ConvertFrom-Json
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
@@ -123,10 +143,11 @@ $mainBicepOutputs = $mainBicepResult.properties.outputs
 
 $firewallPublicIpAddress = $mainBicepOutputs.firewallPublicIpAddress.value
 $sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdentityObjectId.value
+$managedDevopsPoolName = $mainBicepOutputs.managedDevopsPoolName.value
 
 Pop-Location
 
-## Assign Directory Readers role to SQL MI managed identity
+# Assign Directory Readers role to SQL MI managed identity
 
 $directoryReadersRoleId = (Get-MgDirectoryRole -Filter "displayName eq 'Directory Readers'").Id
 if ($null -eq $directoryReadersRoleId) {
@@ -145,6 +166,16 @@ else {
 
     New-MgDirectoryRoleMemberByRef -DirectoryRoleId $directoryReadersRoleId -BodyParameter $addRoleMemberBody
 }
+
+# Update build pipeline agent pool
+
+$buildAndReleasePipeline = Get-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yml) -Raw
+
+$buildAndReleasePipeline = $buildAndReleasePipeline -replace '(devops-pool-[\da-z]*)', $managedDevopsPoolName
+
+Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yml) -Value $buildAndReleasePipeline
+
+Write-Host "Build pipeline agent pool updated to $managedDevopsPoolName."
 
 Write-Host "Deployment complete."
 Write-Host "You need to now set up a DNS A record: $domainName -> $firewallPublicIpAddress"

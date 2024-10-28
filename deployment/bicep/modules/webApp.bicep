@@ -8,6 +8,8 @@ param storageAccountResourceId string
 param appVnetName string
 param subnets object
 param appServiceDnsZoneResourceId string
+param dataProtectionKeyUri string
+param appInsightsConnectionString string
 // param appServiceEnvironmentDnsZoneResourceId string
 // param appServiceEnvironmentIpAddress string
 
@@ -43,20 +45,20 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       appSettings: [
         {
-          name: 'KeyVault__Uri'
-          value: keyVault.properties.vaultUri
-        }
-        {
-          name: 'StorageAccount__BlobEndpointUri'
-          value: storageAccount.properties.primaryEndpoints.blob
-        }
-        {
-          name: 'StorageAccount__ContainerName'
-          value: naming.storageWebAppAuthenticationContainer
-        }
-        {
           name: 'ConnectionStrings__Sql'
           value: 'TODO'
+        }
+        {
+          name: 'DataProtection__StorageBlobUri'
+          value: '${storageAccount.properties.primaryEndpoints.blob}${naming.storageWebAppDataProtectionContainer}/keys.xml'
+        }
+        {
+          name: 'DataProtection__KeyVaultKeyUri'
+          value: dataProtectionKeyUri
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
         }
       ]
       alwaysOn: true
@@ -134,6 +136,8 @@ resource webAppPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDn
 //     appServiceEnvironmentIpAddress: appServiceEnvironmentIpAddress
 //   }
 // }
+
+// TODO: Check this role works with managed HSM since the data actions are Microsoft.KeyVault/vaults/keys/wrap etc
 
 resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(naming.webApp, keyVault.id, 'Key Vault Crypto Service Encryption User')

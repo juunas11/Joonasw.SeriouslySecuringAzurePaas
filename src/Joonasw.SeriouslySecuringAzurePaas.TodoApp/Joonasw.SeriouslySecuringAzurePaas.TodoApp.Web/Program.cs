@@ -1,6 +1,9 @@
+using Azure.Core;
+using Azure.Identity;
 using Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
@@ -51,6 +54,21 @@ public class Program
         {
             options.UseSqlServer(builder.Configuration.GetConnectionString("Sql"));
         });
+
+        // Data protection is used to encrypt the session cookie.
+        // We configure it to use Azure Blob Storage for key storage
+        // and Azure Key Vault for encrypting the keys.
+        // This way you can only get the keys if you have access
+        // to both the storage account and the key vault.
+        TokenCredential tokenCredential = builder.Environment.IsDevelopment()
+            ? new AzureCliCredential(new AzureCliCredentialOptions
+            {
+                TenantId = builder.Configuration["DataProtection:EntraTenantId"]
+            })
+            : new ManagedIdentityCredential();
+        builder.Services.AddDataProtection()
+            .PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["DataProtection:StorageBlobUri"]!), tokenCredential)
+            .ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["DataProtection:KeyVaultKeyUri"]!), tokenCredential);
 
         if (!builder.Environment.IsDevelopment())
         {

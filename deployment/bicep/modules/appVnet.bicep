@@ -5,7 +5,7 @@ param sqlNsgResourceId string
 param sqlRouteTableResourceId string
 
 param addressSpace string
-param hubAddressSpace string
+// param hubAddressSpace string
 param subnets object
 param hubSubnets object
 param firewallPrivateIpAddress string
@@ -57,24 +57,24 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
       //     destinationPortRange: '443'
       //   }
       // }
-      {
-        name: 'AllowBuildAgentHttpsInbound'
-        properties: {
-          priority: 200
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: subnets.buildAgent.addressPrefix
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '443'
-        }
-      }
+      // {
+      //   name: 'AllowBuildAgentHttpsInbound'
+      //   properties: {
+      //     priority: 200
+      //     direction: 'Inbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: subnets.buildAgent.addressPrefix
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: '*'
+      //     destinationPortRange: '443'
+      //   }
+      // }
       {
         // Internal health pings
         name: 'AllowAzureLoadBalancerInbound'
         properties: {
-          priority: 300
+          priority: 100
           direction: 'Inbound'
           access: 'Allow'
           protocol: 'Tcp'
@@ -147,6 +147,19 @@ resource webAppInboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' =
           destinationPortRange: '443'
         }
       }
+      {
+        name: 'AllowBuildAgentHttpsInbound'
+        properties: {
+          priority: 200
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: subnets.buildAgent.addressPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '443'
+        }
+      }
       denyAllInboundRule
       denyAllOutboundRule
     ]
@@ -183,6 +196,32 @@ resource webAppOutboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' 
           sourcePortRange: '*'
           destinationAddressPrefix: subnets.sql.addressPrefix
           destinationPortRange: '1433'
+        }
+      }
+      {
+        name: 'AllowKeyVaultHttpsOutbound'
+        properties: {
+          priority: 300
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: hubSubnets.keyVault.addressPrefix
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'AllowStorageHttpsOutbound'
+        properties: {
+          priority: 400
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.storage.addressPrefix
+          destinationPortRange: '443'
         }
       }
       denyAllOutboundRule

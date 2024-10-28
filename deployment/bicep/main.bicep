@@ -17,6 +17,9 @@ param devCenterProjectResourceId string
 
 param devOpsInfrastructureSpId string
 
+param webAppDataProtectionKeyName string
+param webAppDataProtectionKeyUri string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
@@ -31,7 +34,6 @@ var naming = {
   firewallManagementPip: 'pip-afw-mgmt-${suffix}'
   firewallPip: 'pip-afw-${suffix}'
   firewallPolicy: 'afw-policy-${suffix}'
-  keyVault: 'kv-${suffix}'
   keyVaultPrivateEndpoint: 'kv-pe-${suffix}'
   hubVnet: 'vnet-hub-${suffix}'
   logAnalytics: 'law-${suffix}'
@@ -43,6 +45,7 @@ var naming = {
   storageWebAppAuthenticationContainer: 'webappauth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
+  webAppDataProtectionKeyVault: 'kv-app-dp-${suffix}'
   webAppPrivateEndpoint: 'app-pe-${suffix}'
 }
 
@@ -138,7 +141,7 @@ module appVnet 'modules/appVnet.bicep' = {
     location: location
     naming: naming
     addressSpace: vnetAddressSpaces.app
-    hubAddressSpace: vnetAddressSpaces.hub
+    // hubAddressSpace: vnetAddressSpaces.hub
     subnets: appSubnets
     hubSubnets: hubSubnets
     firewallPrivateIpAddress: firewall.outputs.firewallPrivateIpAddress
@@ -220,9 +223,12 @@ module keyVault 'modules/keyVault.bicep' = {
   params: {
     location: location
     naming: naming
-    keyVaultPrivateDnsZoneId: commonPrivateDns.outputs.keyVaultDnsZoneResourceId
+    // keyVaultPrivateDnsZoneId: commonPrivateDns.outputs.keyVaultDnsZoneResourceId
+    managedHsmPrivateDnsZoneId: commonPrivateDns.outputs.managedHsmDnsZoneResourceId
     privateEndpointVnetName: naming.appVnet
     privateEndpointSubnetName: appSubnets.appServiceKeyVault.name
+    webAppDataProtectionKeyUri: webAppDataProtectionKeyUri
+    webAppDataProtectionKeyName: webAppDataProtectionKeyName
   }
   dependsOn: [
     appVnet
@@ -269,13 +275,15 @@ module webApp 'modules/webApp.bicep' = {
     naming: naming
     appServiceEnvironmentResourceId: appServiceEnvironment.outputs.appServiceEnvironmentResourceId
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
-    keyVaultResourceId: keyVault.outputs.keyVaultResourceId
+    keyVaultResourceId: keyVault.outputs.webAppDataProtectionKeyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
     subnets: appSubnets
     // appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
     // appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
     appVnetName: naming.appVnet
     appServiceDnsZoneResourceId: commonPrivateDns.outputs.appServiceDnsZoneResourceId
+    dataProtectionKeyUri: keyVault.outputs.webAppDataProtectionKeyUri
+    appInsightsConnectionString: monitor.outputs.appInsightsConnectionString
   }
 }
 
@@ -298,3 +306,4 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
 
 output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
+output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName

@@ -10,7 +10,7 @@ The "EnableApplicationGatewayNetworkIsolation" preview flag must be currently en
 
 ## Create Azure DevOps service connection
 
-1. Go to Project settings 
+1. Go to Project settings
 1. Service connections
 1. Create service connection
 1. Type: Azure Resource Manager
@@ -38,7 +38,7 @@ To be most restrictive in this case, you can limit the app to only be able to as
 ## Create Azure DevOps pipeline
 
 After running the deployment script, the DevOps agent pool should be available in Azure DevOps.
-Replace the pool name in deployment/pipelines/build-and-release.yaml with the generated name for the pool.
+The pool name in deployment/pipelines/build-and-release.yaml is updated by the deployment script, so that should be up to date.
 
 You should also have the code in a GitHub repository or Azure DevOps repository to which you have access.
 

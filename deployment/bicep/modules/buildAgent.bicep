@@ -48,3 +48,5 @@ resource managedDevopsPool 'Microsoft.DevOpsInfrastructure/pools@2024-04-04-prev
     }
   }
 }
+
+output managedDevopsPoolName string = managedDevopsPool.name

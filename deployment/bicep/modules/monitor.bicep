@@ -250,3 +250,4 @@ resource appAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwor
 }
 
 output workspaceResourceId string = logAnalyticsWorkspace.id
+output appInsightsConnectionString string = appInsights.properties.ConnectionString
