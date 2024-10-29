@@ -8,12 +8,25 @@ trigger:
 pool:
   name: "devops-pool-757m7v3o4cgdk"
 
+variables:
+  - name: SqlServer
+    value: "TODO.database.windows.net"
+  - name: SqlDatabase
+    value: "TODO"
+  - name: WebApp
+    value: "TODO"
+  - name: ResourceGroup
+    value: "TODO"
+
 steps:
   - checkout: self
+    clean: true
+
   - pwsh: |
       dotnet publish -c Release -o $(Build.ArtifactStagingDirectory)/publish
     displayName: "Run dotnet publish"
     workingDirectory: "src/Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web"
+
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/publish"
@@ -22,14 +35,25 @@ steps:
       archiveFile: "$(Build.ArtifactStagingDirectory)/web-$(Build.BuildId).zip"
       replaceExistingArchive: true
     displayName: "Archive files"
+
+  - pwsh: |
+      dotnet ef migrations script -o $(Build.ArtifactStagingDirectory)/migration.sql --idempotent -p Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data -s Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web
+    displayName: "Generate EF migration script"
+    workingDirectory: "src"
+
+  - pwsh: |
+      $accessToken = az account get-access-token --resource https://database.windows.net --query accessToken -o tsv
+      Invoke-SqlCmd -ServerInstance "$(SqlServer)" -Database "$(SqlDatabase)" -AccessToken $accessToken -InputFile "$(Build.ArtifactStagingDirectory)/migration.sql"
+    displayName: "Deploy EF migration script"
+
   - task: AzureWebApp@1
     inputs:
       azureSubscription: "seriously-securing-azure-paas"
       appType: "webApp"
-      appName: "TODO"
+      appName: "$(WebApp)"
       package: "$(Build.ArtifactStagingDirectory)/web-$(Build.BuildId).zip"
       deployToSlotOrASE: true
       deploymentMethod: "runFromPackage"
       slotName: "production"
-      resourceGroupName: "TODO"
+      resourceGroupName: "$(ResourceGroup)"
     displayName: "Deploy to Azure App Service"
