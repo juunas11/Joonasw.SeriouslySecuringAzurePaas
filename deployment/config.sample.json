@@ -9,5 +9,6 @@
   "devCenterName": "ssap-dev-center",
   "devCenterProjectName": "ssap-todo-app",
   "azureDevOpsOrganizationUrl": "https://dev.azure.com/yourorg",
-  "azureDevOpsProjectName": ""
+  "azureDevOpsProjectName": "",
+  "initialKeyVaultAdminObjectId": ""
 }

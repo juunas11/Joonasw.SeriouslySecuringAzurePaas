@@ -1,0 +1,65 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div>
+    <h2>Create todo</h2>
+    <form id="completeForm" method="post" asp-page-handler="CompleteTodo">
+        <input type="hidden" id="completeId" name="id" />
+    </form>
+    <form id="deleteForm" method="post" asp-page-handler="DeleteTodo">
+        <input type="hidden" id="deleteId" name="id" />
+    </form>
+    <form class="mb-3" method="post" asp-page-handler="AddTodo">
+        <input type="text" class="form-control" id="newTodoText" name="newTodoText" />
+        <button type="submit" class="btn btn-primary mt-2">Create</button>
+    </form>
+    <h3>Todos</h3>
+    <table class="table table-bordered table-striped" style="width: 100%">
+        <thead>
+            <tr>
+                <th>Text</th>
+                <th>Is done</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.TodoItems.Count == 0)
+            {
+                <tr>
+                    <td colspan="3">No todos</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var todo in Model.TodoItems)
+                {
+                    <tr>
+                        <td>@todo.Text</td>
+                        <td>@todo.IsDone</td>
+                        <td>
+                            <button class="btn btn-success" onclick="complete('@todo.Id')">Complete</button>
+                            <button class="btn btn-danger" onclick="deleteTodo('@todo.Id')">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        function complete(id) {
+            document.getElementById("completeId").value = id;
+            document.getElementById("completeForm").submit();
+        }
+
+        function deleteTodo(id) {
+            document.getElementById("deleteId").value = id;
+            document.getElementById("deleteForm").submit();
+        }
+    </script>
+}

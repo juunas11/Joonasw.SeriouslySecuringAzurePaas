@@ -100,6 +100,9 @@ resource dnatAppRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectio
 resource buildAgentRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
   parent: firewallPolicy
   name: 'build-agent-outbound-collection'
+  dependsOn: [
+    dnatAppRuleCollection
+  ]
   properties: {
     priority: 200
     ruleCollections: [

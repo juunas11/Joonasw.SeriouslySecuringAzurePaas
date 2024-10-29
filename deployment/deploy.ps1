@@ -13,6 +13,7 @@ $devCenterName = $config.devCenterName
 $devCenterProjectName = $config.devCenterProjectName
 $azureDevOpsOrganizationUrl = $config.azureDevOpsOrganizationUrl
 $azureDevOpsProjectName = $config.azureDevOpsProjectName
+$initialKeyVaultAdminObjectId = $config.initialKeyVaultAdminObjectId
 
 # Get PFX as base 64 encoded string
 $certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $PSScriptRoot cert.pfx)))
@@ -95,7 +96,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $keyVaultKeyUri = ""
 
-if ($null -ne $keyVaultKeyName) {
+if ($null -ne $keyVaultName) {
     $keyVaultKeyUri = az keyvault key show --name "$keyVaultKeyName" --vault-name "$keyVaultName" --subscription "$subscriptionId" --query "key.kid" -o tsv
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to get Key Vault key."
@@ -132,7 +133,8 @@ $mainBicepResult = az deployment group create `
     -p devCenterProjectResourceId=$devCenterProjectId `
     -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId `
     -p webAppDataProtectionKeyName=$keyVaultKeyName `
-    -p webAppDataProtectionKeyUri=$keyVaultKeyUri | ConvertFrom-Json
+    -p webAppDataProtectionKeyUri=$keyVaultKeyUri `
+    -p initialKeyVaultAdminObjectId=$initialKeyVaultAdminObjectId | ConvertFrom-Json
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location

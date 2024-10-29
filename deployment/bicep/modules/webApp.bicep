@@ -153,6 +153,8 @@ resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2
   }
 }
 
+// TODO: Change role assignment to container level
+
 resource webAppStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(naming.webApp, storageAccount.id, 'Storage Blob Data Contributor')
   scope: storageAccount

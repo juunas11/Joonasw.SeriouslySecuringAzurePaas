@@ -84,7 +84,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           destinationPortRange: '80'
         }
       }
-      denyAllInboundRule
+      // denyAllInboundRule
       // {
       //   name: 'AllowVnetHttpsOutbound'
       //   properties: {
@@ -124,7 +124,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
       //     destinationPortRange: '1433'
       //   }
       // }
-      denyAllOutboundRule
+      // denyAllOutboundRule
     ]
   }
 }
@@ -207,7 +207,7 @@ resource webAppOutboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' 
           protocol: 'Tcp'
           sourceAddressPrefix: '*'
           sourcePortRange: '*'
-          destinationAddressPrefix: hubSubnets.keyVault.addressPrefix
+          destinationAddressPrefix: subnets.appServiceKeyVault.addressPrefix
           destinationPortRange: '443'
         }
       }

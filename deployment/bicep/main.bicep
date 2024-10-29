@@ -20,6 +20,8 @@ param devOpsInfrastructureSpId string
 param webAppDataProtectionKeyName string
 param webAppDataProtectionKeyUri string
 
+param initialKeyVaultAdminObjectId string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
@@ -229,6 +231,7 @@ module keyVault 'modules/keyVault.bicep' = {
     privateEndpointSubnetName: appSubnets.appServiceKeyVault.name
     webAppDataProtectionKeyUri: webAppDataProtectionKeyUri
     webAppDataProtectionKeyName: webAppDataProtectionKeyName
+    initialKeyVaultAdminObjectId: initialKeyVaultAdminObjectId
   }
   dependsOn: [
     appVnet

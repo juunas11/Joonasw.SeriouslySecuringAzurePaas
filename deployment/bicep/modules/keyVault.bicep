@@ -8,6 +8,7 @@ param managedHsmPrivateDnsZoneId string
 
 param webAppDataProtectionKeyUri string
 param webAppDataProtectionKeyName string
+param initialKeyVaultAdminObjectId string
 
 // HSM because why not
 resource webAppDataProtectionKeyVault 'Microsoft.KeyVault/managedHSMs@2023-07-01' = {
@@ -15,8 +16,6 @@ resource webAppDataProtectionKeyVault 'Microsoft.KeyVault/managedHSMs@2023-07-01
   name: naming.webAppDataProtectionKeyVault
   properties: {
     tenantId: tenant().tenantId
-    enablePurgeProtection: true
-    enableSoftDelete: true
     publicNetworkAccess: 'Disabled'
     networkAcls: {
       defaultAction: 'Deny'
@@ -24,6 +23,14 @@ resource webAppDataProtectionKeyVault 'Microsoft.KeyVault/managedHSMs@2023-07-01
       bypass: 'None'
       virtualNetworkRules: []
     }
+    initialAdminObjectIds: [
+      initialKeyVaultAdminObjectId
+    ]
+    enableSoftDelete: true
+    // You would normally want this two enabled.
+    // However, I redeploy these resources all the time,
+    // and I would like to be able to delete them.
+    enablePurgeProtection: false
   }
   sku: {
     family: 'B'
