@@ -146,6 +146,7 @@ $mainBicepOutputs = $mainBicepResult.properties.outputs
 $firewallPublicIpAddress = $mainBicepOutputs.firewallPublicIpAddress.value
 $sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdentityObjectId.value
 $managedDevopsPoolName = $mainBicepOutputs.managedDevopsPoolName.value
+$webAppName = $mainBicepOutputs.webAppName.value
 
 Pop-Location
 
@@ -169,11 +170,13 @@ else {
     New-MgDirectoryRoleMemberByRef -DirectoryRoleId $directoryReadersRoleId -BodyParameter $addRoleMemberBody
 }
 
-# Update build pipeline agent pool
+# Update build pipeline values
 
 $buildAndReleasePipeline = Get-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yml) -Raw
 
 $buildAndReleasePipeline = $buildAndReleasePipeline -replace '(devops-pool-[\da-z]*)', $managedDevopsPoolName
+$buildAndReleasePipeline = $buildAndReleasePipeline -replace '(appName: "\.*")', "appName: `"$webAppName`""
+$buildAndReleasePipeline = $buildAndReleasePipeline -replace '(resourceGroupName: "\.*")', "resourceGroupName: `"$resourceGroup`""
 
 Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yml) -Value $buildAndReleasePipeline
 

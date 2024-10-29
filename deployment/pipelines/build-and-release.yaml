@@ -11,5 +11,25 @@ pool:
 steps:
   - checkout: self
   - pwsh: |
-      Write-Host "Hello, World!"
-    displayName: "Test"
+      dotnet publish -c Release -o $(Build.ArtifactStagingDirectory)/publish
+    displayName: "Run dotnet publish"
+    workingDirectory: "src/Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web"
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/publish"
+      includeRootFolder: false
+      archiveType: "zip"
+      archiveFile: "$(Build.ArtifactStagingDirectory)/web-$(Build.BuildId).zip"
+      replaceExistingArchive: true
+    displayName: "Archive files"
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: "seriously-securing-azure-paas"
+      appType: "webApp"
+      appName: "TODO"
+      package: "$(Build.ArtifactStagingDirectory)/web-$(Build.BuildId).zip"
+      deployToSlotOrASE: true
+      deploymentMethod: "runFromPackage"
+      slotName: "production"
+      resourceGroupName: "TODO"
+    displayName: "Deploy to Azure App Service"

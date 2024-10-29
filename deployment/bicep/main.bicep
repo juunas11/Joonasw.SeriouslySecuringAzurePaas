@@ -310,3 +310,4 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
 output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
+output webAppName string = webApp.outputs.webAppName
