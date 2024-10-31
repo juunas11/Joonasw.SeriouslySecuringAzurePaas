@@ -572,12 +572,12 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
         name: subnets.appServiceEnvironment.name
         properties: {
           addressPrefix: subnets.appServiceEnvironment.addressPrefix
-          networkSecurityGroup: {
-            id: appServiceEnvironmentNsg.id
-          }
-          routeTable: {
-            id: routeTable.id
-          }
+          // networkSecurityGroup: {
+          //   id: appServiceEnvironmentNsg.id
+          // }
+          // routeTable: {
+          //   id: routeTable.id
+          // }
           delegations: [
             {
               name: 'Microsoft.Web/hostingEnvironments'

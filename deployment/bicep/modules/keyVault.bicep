@@ -6,8 +6,8 @@ param privateEndpointSubnetName string
 // param keyVaultPrivateDnsZoneId string
 param managedHsmPrivateDnsZoneId string
 
-param webAppDataProtectionKeyUri string
-param webAppDataProtectionKeyName string
+// param webAppDataProtectionKeyUri string
+// param webAppDataProtectionKeyName string
 param initialKeyVaultAdminObjectId string
 
 // HSM because why not
@@ -38,25 +38,29 @@ resource webAppDataProtectionKeyVault 'Microsoft.KeyVault/managedHSMs@2023-07-01
   }
 }
 
+// TODO: This is not working because HSM does not trust ARM by default.
+// We need to change a setting on it to trust it.
+// Might be necessary to do this after Bicep deployment.
+// OR, maybe the AZ CLI commands will work anyway. I dunno.
 // Only create the key once
-resource webAppDataProtectionKey 'Microsoft.KeyVault/managedHSMs/keys@2023-07-01' = if (empty(webAppDataProtectionKeyUri)) {
-  parent: webAppDataProtectionKeyVault
-  name: webAppDataProtectionKeyName
-  properties: {
-    // Using P-521 curve is pretty excessive. P-384 or P256 would be faster and probably _enough_.
-    curveName: 'P-521'
-    kty: 'EC-HSM'
-    // Could define a rotation policy here
-    keyOps: [
-      'wrapKey'
-      'unwrapKey'
-    ]
-    attributes: {
-      enabled: true
-      exportable: false
-    }
-  }
-}
+// resource webAppDataProtectionKey 'Microsoft.KeyVault/managedHSMs/keys@2023-07-01' = if (empty(webAppDataProtectionKeyUri)) {
+//   parent: webAppDataProtectionKeyVault
+//   name: webAppDataProtectionKeyName
+//   properties: {
+//     // We need an RSA key since we need the wrap key and unwrap key operations (which are not supported by EC keys)
+//     kty: 'RSA-HSM'
+//     keySize: 4096
+//     // Could define a rotation policy here
+//     keyOps: [
+//       'wrapKey'
+//       'unwrapKey'
+//     ]
+//     attributes: {
+//       enabled: true
+//       exportable: false
+//     }
+//   }
+// }
 
 // resource webAppDataProtectionKeyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 //   location: location
@@ -130,6 +134,7 @@ resource privateEndpointDnsZoneGroup 'Microsoft.Network/privateEndpoints/private
 }
 
 output webAppDataProtectionKeyVaultResourceId string = webAppDataProtectionKeyVault.id
-output webAppDataProtectionKeyUri string = empty(webAppDataProtectionKeyUri)
-  ? webAppDataProtectionKey.properties.keyUri
-  : webAppDataProtectionKeyUri
+output webAppDataProtectionKeyVaultName string = webAppDataProtectionKeyVault.name
+// output webAppDataProtectionKeyUri string = empty(webAppDataProtectionKeyUri)
+//   ? webAppDataProtectionKey.properties.keyUri
+//   : webAppDataProtectionKeyUri

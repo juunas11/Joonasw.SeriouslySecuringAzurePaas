@@ -172,6 +172,10 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
       id: firewallPolicy.id
     }
   }
+  dependsOn: [
+    buildAgentRuleCollection
+    dnatAppRuleCollection
+  ]
 }
 
 output firewallPublicIpAddress string = firewallPip.properties.ipAddress

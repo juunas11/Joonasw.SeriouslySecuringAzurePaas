@@ -18,7 +18,7 @@ param devCenterProjectResourceId string
 param devOpsInfrastructureSpId string
 
 param webAppDataProtectionKeyName string
-param webAppDataProtectionKeyUri string
+// param webAppDataProtectionKeyUri string
 
 param initialKeyVaultAdminObjectId string
 
@@ -44,7 +44,7 @@ var naming = {
   sqlManagedInstance: 'sql-${suffix}'
   storageAccount: 'sa${suffix}'
   storageAccountPrivateEndpoint: 'sa-pe-blob-${suffix}'
-  storageWebAppAuthenticationContainer: 'webappauth'
+  storageWebAppDataProtectionContainer: 'webappauth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
   webAppDataProtectionKeyVault: 'kv-app-dp-${suffix}'
@@ -229,8 +229,8 @@ module keyVault 'modules/keyVault.bicep' = {
     managedHsmPrivateDnsZoneId: commonPrivateDns.outputs.managedHsmDnsZoneResourceId
     privateEndpointVnetName: naming.appVnet
     privateEndpointSubnetName: appSubnets.appServiceKeyVault.name
-    webAppDataProtectionKeyUri: webAppDataProtectionKeyUri
-    webAppDataProtectionKeyName: webAppDataProtectionKeyName
+    // webAppDataProtectionKeyUri: webAppDataProtectionKeyUri
+    // webAppDataProtectionKeyName: webAppDataProtectionKeyName
     initialKeyVaultAdminObjectId: initialKeyVaultAdminObjectId
   }
   dependsOn: [
@@ -281,12 +281,14 @@ module webApp 'modules/webApp.bicep' = {
     keyVaultResourceId: keyVault.outputs.webAppDataProtectionKeyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
     subnets: appSubnets
-    // appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
-    // appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
-    appVnetName: naming.appVnet
-    appServiceDnsZoneResourceId: commonPrivateDns.outputs.appServiceDnsZoneResourceId
-    dataProtectionKeyUri: keyVault.outputs.webAppDataProtectionKeyUri
+    appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
+    appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
+    // appVnetName: naming.appVnet
+    // appServiceDnsZoneResourceId: commonPrivateDns.outputs.appServiceDnsZoneResourceId
+    // dataProtectionKeyUri: keyVault.outputs.webAppDataProtectionKeyUri
     appInsightsConnectionString: monitor.outputs.appInsightsConnectionString
+    dataProtectionManagedHsmName: keyVault.outputs.webAppDataProtectionKeyVaultName
+    dataProtectionKeyName: webAppDataProtectionKeyName
   }
 }
 
@@ -311,3 +313,4 @@ output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
 output webAppName string = webApp.outputs.webAppName
+output webAppDataProtectionManagedHsmName string = keyVault.outputs.webAppDataProtectionKeyVaultName

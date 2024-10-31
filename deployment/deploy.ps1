@@ -27,7 +27,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # TODO: Check if we already are logged in with correct scope
-Connect-MgGraph -TenantId "0d7e0754-812c-4a0f-883f-5f34cf78d354" -Scopes "RoleManagement.ReadWrite.Directory" -NoWelcome
+Connect-MgGraph -TenantId "$tenantId" -Scopes "RoleManagement.ReadWrite.Directory" -NoWelcome
 
 # Ensure resource group exists
 $rgExists = az group exists --subscription "$subscriptionId" -g "$resourceGroup"
@@ -87,21 +87,6 @@ if ($null -eq $devOpsInfrastructureSpId) {
 
 # Get Key Vault key URI if it exists (used for session cookie encryption key encryption)
 $keyVaultKeyName = "DataProtectionKeyEncryptionKey"
-$keyVaultNamePrefix = "kv-app-dp-"
-
-$keyVaultName = az keyvault list -g "$resourceGroup" --subscription "$subscriptionId" --query "[].name" | ConvertFrom-Json | Where-Object { $_.StartsWith($keyVaultNamePrefix) }
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to get Key Vault name."
-}
-
-$keyVaultKeyUri = ""
-
-if ($null -ne $keyVaultName) {
-    $keyVaultKeyUri = az keyvault key show --name "$keyVaultKeyName" --vault-name "$keyVaultName" --subscription "$subscriptionId" --query "key.kid" -o tsv
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to get Key Vault key."
-    }
-}
 
 # Deploy Bicep template
 
@@ -133,7 +118,6 @@ $mainBicepResult = az deployment group create `
     -p devCenterProjectResourceId=$devCenterProjectId `
     -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId `
     -p webAppDataProtectionKeyName=$keyVaultKeyName `
-    -p webAppDataProtectionKeyUri=$keyVaultKeyUri `
     -p initialKeyVaultAdminObjectId=$initialKeyVaultAdminObjectId | ConvertFrom-Json
 
 if ($LASTEXITCODE -ne 0) {
@@ -147,6 +131,7 @@ $firewallPublicIpAddress = $mainBicepOutputs.firewallPublicIpAddress.value
 $sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdentityObjectId.value
 $managedDevopsPoolName = $mainBicepOutputs.managedDevopsPoolName.value
 $webAppName = $mainBicepOutputs.webAppName.value
+$webAppDataProtectionManagedHsmName = $mainBicepOutputs.webAppDataProtectionManagedHsmName.value
 
 Pop-Location
 
@@ -157,7 +142,8 @@ if ($null -eq $directoryReadersRoleId) {
     throw "Directory Readers role not found."
 }
 
-$directoryReadersRoleMember = Get-MgDirectoryRoleMember -DirectoryRoleId $directoryReadersRoleId | Where-Object { $_.Id -eq $sqlManagedInstanceIdentityObjectId }
+# $directoryReadersRoleMember = Get-MgDirectoryRoleMember -DirectoryRoleId $directoryReadersRoleId | Where-Object { $_.Id -eq $sqlManagedInstanceIdentityObjectId }
+$directoryReadersRoleMember = Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryObjectId $sqlManagedInstanceIdentityObjectId -DirectoryRoleId $directoryReadersRoleId
 if ($null -ne $directoryReadersRoleMember) {
     Write-Host "SQL MI managed identity is already a member of Directory Readers role."
 }
@@ -172,14 +158,53 @@ else {
 
 # Update build pipeline values
 
-$buildAndReleasePipeline = Get-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yml) -Raw
+$buildAndReleasePipeline = Get-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yaml) -Raw
 
 $buildAndReleasePipeline = $buildAndReleasePipeline -replace '(devops-pool-[\da-z]*)', $managedDevopsPoolName
-// TODO: Replace variables at start
+# TODO: Replace variables at start
 
-Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yml) -Value $buildAndReleasePipeline
+Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yaml) -Value $buildAndReleasePipeline
 
 Write-Host "Build pipeline agent pool updated to $managedDevopsPoolName."
+
+# Setup HSM keys
+
+## TODO: The following commands do not work from outside the VNET
+## Also they don't work if the HSM is not activated yet
+## Which is a whole thing where generate min 3 RSA keys and upload those to it
+## How will we do it when we need to do it from within the VNET?
+## Maybe another script which is run once from a VM in the VNET?
+
+# $allowArmSetting = az keyvault setting show -n "AllowKeyManagementOperationsThroughARM" --hsm-name "$webAppDataProtectionManagedHsmName" --subscription "$subscriptionId" --query "" -o tsv
+# if ($LASTEXITCODE -ne 0) {
+#     throw "Failed to get AllowKeyManagementOperationsThroughARM setting."
+# }
+
+# if ($null -eq $allowArmSetting) {
+#     Write-Host "Setting AllowKeyManagementOperationsThroughARM setting for Managed HSM..."
+#     az keyvault setting update -n "AllowKeyManagementOperationsThroughARM" --value "true" --hsm-name "$webAppDataProtectionManagedHsmName" --subscription "$subscriptionId"
+#     if ($LASTEXITCODE -ne 0) {
+#         throw "Failed to set AllowKeyManagementOperationsThroughARM setting."
+#     }
+# }
+
+# $dataProtectionKeyUri = az keyvault key show --name "$keyVaultKeyName" --vault-name "$webAppDataProtectionManagedHsmName" --subscription "$subscriptionId" --query "key.kid" -o tsv
+# if ($null -eq $dataProtectionKeyUri) {
+#     Write-Host "Data protection key does not exist. Creating data protection key..."
+#     $dataProtectionKeyBicepResult = az deployment group create `
+#         --subscription "$subscriptionId" `
+#         --resource-group "$resourceGroup" `
+#         --template-file "managedHsmKey.bicep" `
+#         --name "$($deploymentNamePrefix)-managedHsmKey-$($keyVaultKeyName)" `
+#         -p managedHsmName=$webAppDataProtectionManagedHsmName `
+#         -p keyName=$keyVaultKeyName `
+#         -p kty=RSA `
+#         -p keyOps='("wrapKey", "unwrapKey")' `
+#         -p keySize=4096 | ConvertFrom-Json
+#     if ($LASTEXITCODE -ne 0) {
+#         throw "Failed to deploy managedHsmKey.bicep."
+#     }
+# }
 
 Write-Host "Deployment complete."
 Write-Host "You need to now set up a DNS A record: $domainName -> $firewallPublicIpAddress"

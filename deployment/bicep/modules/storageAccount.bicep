@@ -33,7 +33,7 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01'
 
 resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: blobService
-  name: naming.storageWebAppAuthenticationContainer
+  name: naming.storageWebAppDataProtectionContainer
   properties: {
     publicAccess: 'None'
   }

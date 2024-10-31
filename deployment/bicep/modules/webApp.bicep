@@ -5,13 +5,15 @@ param appServiceEnvironmentResourceId string
 param appServicePlanResourceId string
 param keyVaultResourceId string
 param storageAccountResourceId string
-param appVnetName string
+// param appVnetName string
 param subnets object
-param appServiceDnsZoneResourceId string
-param dataProtectionKeyUri string
+// param appServiceDnsZoneResourceId string
+// param dataProtectionKeyUri string
 param appInsightsConnectionString string
-// param appServiceEnvironmentDnsZoneResourceId string
-// param appServiceEnvironmentIpAddress string
+param dataProtectionManagedHsmName string
+param dataProtectionKeyName string
+param appServiceEnvironmentDnsZoneResourceId string
+param appServiceEnvironmentIpAddress string
 
 var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
@@ -35,16 +37,12 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     }
     clientAffinityEnabled: false
     httpsOnly: true
-    publicNetworkAccess: 'Disabled'
-    virtualNetworkSubnetId: resourceId(
-      'Microsoft.Network/virtualNetworks/subnets',
-      appVnetName,
-      subnets.app.webAppOutbound.name
-    )
+    publicNetworkAccess: 'Enabled'
     vnetRouteAllEnabled: true
     siteConfig: {
       appSettings: [
         {
+          // Example: Server=tcp:sql-zktdtyvkxu3lk.587b98789138.database.windows.net,1433;Persist Security Info=False;User ID={your_username};Password={your_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Authentication="Active Directory Password";
           name: 'ConnectionStrings__Sql'
           value: 'TODO'
         }
@@ -53,8 +51,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           value: '${storageAccount.properties.primaryEndpoints.blob}${naming.storageWebAppDataProtectionContainer}/keys.xml'
         }
         {
+          // Example: https://kv-app-dp-zktdtyvkxu3lk.managedhsm.azure.net/keys/kv-app-dp-key
           name: 'DataProtection__KeyVaultKeyUri'
-          value: dataProtectionKeyUri
+          value: 'https://${dataProtectionManagedHsmName}.managedhsm.azure.net/keys/${dataProtectionKeyName}'
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -70,7 +69,23 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       remoteDebuggingEnabled: false
       scmMinTlsVersion: '1.3'
       ipSecurityRestrictionsDefaultAction: 'Deny'
+      ipSecurityRestrictions: [
+        {
+          priority: 100
+          name: 'AllowApplicationGateway'
+          ipAddress: subnets.appGateway.addressPrefix
+          action: 'Allow'
+        }
+      ]
       scmIpSecurityRestrictionsDefaultAction: 'Deny'
+      scmIpSecurityRestrictions: [
+        {
+          priority: 100
+          name: 'AllowBuildAgent'
+          ipAddress: subnets.buildAgent.addressPrefix
+          action: 'Allow'
+        }
+      ]
     }
   }
   identity: {
@@ -78,43 +93,41 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
-// TODO: Private endpoint and DNS, VNET integration
+// resource webAppPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
+//   name: naming.webAppPrivateEndpoint
+//   location: location
+//   properties: {
+//     subnet: {
+//       id: resourceId('Microsoft.Network/virtualNetworks/subnets', appVnetName, subnets.webAppInbound.name)
+//     }
+//     privateLinkServiceConnections: [
+//       {
+//         name: '${naming.webApp}-privateLinkServiceConnection'
+//         properties: {
+//           privateLinkServiceId: webApp.id
+//           groupIds: [
+//             'sites'
+//           ]
+//         }
+//       }
+//     ]
+//   }
+// }
 
-resource webAppPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
-  name: naming.webAppPrivateEndpoint
-  location: location
-  properties: {
-    subnet: {
-      id: resourceId('Microsoft.Network/virtualNetworks/subnets', appVnetName, subnets.app.webAppInbound.name)
-    }
-    privateLinkServiceConnections: [
-      {
-        name: '${naming.webApp}-privateLinkServiceConnection'
-        properties: {
-          privateLinkServiceId: webApp.id
-          groupIds: [
-            'sites'
-          ]
-        }
-      }
-    ]
-  }
-}
-
-resource webAppPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
-  parent: webAppPrivateEndpoint
-  name: 'PrivateEndpointPrivateDnsZoneGroup'
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'privatelink-azurewebsites-net'
-        properties: {
-          privateDnsZoneId: appServiceDnsZoneResourceId
-        }
-      }
-    ]
-  }
-}
+// resource webAppPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
+//   parent: webAppPrivateEndpoint
+//   name: 'PrivateEndpointPrivateDnsZoneGroup'
+//   properties: {
+//     privateDnsZoneConfigs: [
+//       {
+//         name: 'privatelink-azurewebsites-net'
+//         properties: {
+//           privateDnsZoneId: appServiceDnsZoneResourceId
+//         }
+//       }
+//     ]
+//   }
+// }
 
 // resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2023-12-01' = {
 //   parent: webApp
@@ -128,30 +141,30 @@ resource webAppPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDn
 //   }
 // }
 
-// module webAppDns './webAppDns.bicep' = {
-//   name: 'webAppDns'
-//   params: {
-//     webAppFqdn: webApp.properties.defaultHostName
-//     appServiceEnvironmentDnsZoneResourceId: appServiceEnvironmentDnsZoneResourceId
-//     appServiceEnvironmentIpAddress: appServiceEnvironmentIpAddress
-//   }
-// }
+module webAppDns './webAppDns.bicep' = {
+  name: 'webAppDns'
+  params: {
+    webAppFqdn: webApp.properties.defaultHostName
+    appServiceEnvironmentDnsZoneResourceId: appServiceEnvironmentDnsZoneResourceId
+    appServiceEnvironmentIpAddress: appServiceEnvironmentIpAddress
+  }
+}
 
 // TODO: Check this role works with managed HSM since the data actions are Microsoft.KeyVault/vaults/keys/wrap etc
 
-resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(naming.webApp, keyVault.id, 'Key Vault Crypto Service Encryption User')
-  scope: keyVault
-  properties: {
-    principalId: webApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    // Key Vault Crypto Service Encryption User
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      'e147488a-f6f5-4113-8e2d-b22465e65bf6'
-    )
-  }
-}
+// resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   name: guid(naming.webApp, keyVault.id, 'Key Vault Crypto Service Encryption User')
+//   scope: keyVault
+//   properties: {
+//     principalId: webApp.identity.principalId
+//     principalType: 'ServicePrincipal'
+//     // Key Vault Crypto Service Encryption User
+//     roleDefinitionId: subscriptionResourceId(
+//       'Microsoft.Authorization/roleDefinitions',
+//       'e147488a-f6f5-4113-8e2d-b22465e65bf6'
+//     )
+//   }
+// }
 
 // TODO: Change role assignment to container level
 

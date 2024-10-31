@@ -69,66 +69,6 @@ resource appInsightsScopedResource 'Microsoft.Insights/privateLinkScopes/scopedR
   }
 }
 
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-02-01' = {
-  location: location
-  name: naming.logAnalyticsPrivateEndpoint
-  properties: {
-    subnet: {
-      id: resourceId('Microsoft.Network/virtualNetworks/subnets', privateEndpointVnetName, privateEndpointSubnetName)
-    }
-    privateLinkServiceConnections: [
-      {
-        name: naming.logAnalyticsPrivateEndpoint
-        properties: {
-          privateLinkServiceId: privateLinkScope.id
-          groupIds: [
-            'azuremonitor'
-          ]
-        }
-      }
-    ]
-  }
-}
-
-resource privateEndpointDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
-  parent: privateEndpoint
-  name: 'PrivateLinkScopePrivateDnsZoneGroup'
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'privatelink-monitor-azure-com'
-        properties: {
-          privateDnsZoneId: monitorDnsZone.id
-        }
-      }
-      {
-        name: 'privatelink-oms-opinsights-azure-com'
-        properties: {
-          privateDnsZoneId: omsDnsZone.id
-        }
-      }
-      {
-        name: 'privatelink-ods-opinsights-azure-com'
-        properties: {
-          privateDnsZoneId: odsDnsZone.id
-        }
-      }
-      {
-        name: 'privatelink-agentsvc-azure-automation-net'
-        properties: {
-          privateDnsZoneId: agentSvcDnsZone.id
-        }
-      }
-      {
-        name: 'privatelink-blob-core-windows-net'
-        properties: {
-          privateDnsZoneId: storageBlobDnsZoneResourceId
-        }
-      }
-    ]
-  }
-}
-
 resource monitorDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   name: 'privatelink.monitor.azure.com'
   location: 'global'
@@ -246,6 +186,77 @@ resource appAgentSvcDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwor
     virtualNetwork: {
       id: appVnetResourceId
     }
+  }
+}
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-02-01' = {
+  location: location
+  name: naming.logAnalyticsPrivateEndpoint
+  properties: {
+    subnet: {
+      id: resourceId('Microsoft.Network/virtualNetworks/subnets', privateEndpointVnetName, privateEndpointSubnetName)
+    }
+    privateLinkServiceConnections: [
+      {
+        name: naming.logAnalyticsPrivateEndpoint
+        properties: {
+          privateLinkServiceId: privateLinkScope.id
+          groupIds: [
+            'azuremonitor'
+          ]
+        }
+      }
+    ]
+  }
+  // TODO: See if this fixes the first deployment issues with the private endpoint
+  dependsOn: [
+    agentSvcDnsZone
+    monitorDnsZone
+    odsDnsZone
+    omsDnsZone
+    hubAgentSvcDnsZoneLink
+    hubMonitorDnsZoneLink
+    hubOdsDnsZoneLink
+    hubOmsDnsZoneLink
+  ]
+}
+
+resource privateEndpointDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
+  parent: privateEndpoint
+  name: 'PrivateLinkScopePrivateDnsZoneGroup'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-monitor-azure-com'
+        properties: {
+          privateDnsZoneId: monitorDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-oms-opinsights-azure-com'
+        properties: {
+          privateDnsZoneId: omsDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-ods-opinsights-azure-com'
+        properties: {
+          privateDnsZoneId: odsDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-agentsvc-azure-automation-net'
+        properties: {
+          privateDnsZoneId: agentSvcDnsZone.id
+        }
+      }
+      {
+        name: 'privatelink-blob-core-windows-net'
+        properties: {
+          privateDnsZoneId: storageBlobDnsZoneResourceId
+        }
+      }
+    ]
   }
 }
 
