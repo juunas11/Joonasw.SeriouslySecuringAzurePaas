@@ -43,6 +43,8 @@ steps:
       dotnet ef migrations script -o $(Build.ArtifactStagingDirectory)/migration.sql --idempotent -p Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data -s Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web
     displayName: "Generate EF migration script"
     workingDirectory: "src"
+    env:
+      ASPNETCORE_ENVIRONMENT: "Production"
 
   - pwsh: |
       az login --identity --username $(ManagedIdentityObjectId)
