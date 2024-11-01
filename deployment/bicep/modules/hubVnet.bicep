@@ -1,7 +1,7 @@
 param location string
 param naming object
 param addressSpace string
-param appVnetAddressSpace string
+// param appVnetAddressSpace string
 param subnets object
 
 resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {

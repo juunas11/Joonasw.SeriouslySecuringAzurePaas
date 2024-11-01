@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-$config = Get-Content -Path (Join-Path $PSScriptRoot config.json) | ConvertFrom-Json
+$config = Get-Content -Path (Join-Path $PSScriptRoot config.json) -Raw | ConvertFrom-Json
 
 $tenantId = $config.tenantId
 $subscriptionId = $config.subscriptionId
@@ -14,11 +14,16 @@ $devCenterProjectName = $config.devCenterProjectName
 $azureDevOpsOrganizationUrl = $config.azureDevOpsOrganizationUrl
 $azureDevOpsProjectName = $config.azureDevOpsProjectName
 $initialKeyVaultAdminObjectId = $config.initialKeyVaultAdminObjectId
+$developerIpAddress = $config.developerIpAddress
+$managementVmAdminUsername = $config.managementVmAdminUsername
+$managementVmAdminSshPublicKeyFilePath = $config.managementVmAdminSshPublicKeyFilePath
 
 # Get PFX as base 64 encoded string
 $certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $PSScriptRoot cert.pfx)))
 # TODO: Get this through secure string (user input)
 $certificatePassword = $config.certificatePassword
+
+$managementVmAdminSshPublicKey = (Get-Content -Path $managementVmAdminSshPublicKeyFilePath -Raw).Trim()
 
 # Check subscription is available
 az account show -s "$subscriptionId" | Out-Null
@@ -118,7 +123,10 @@ $mainBicepResult = az deployment group create `
     -p devCenterProjectResourceId=$devCenterProjectId `
     -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId `
     -p webAppDataProtectionKeyName=$keyVaultKeyName `
-    -p initialKeyVaultAdminObjectId=$initialKeyVaultAdminObjectId | ConvertFrom-Json
+    -p initialKeyVaultAdminObjectId=$initialKeyVaultAdminObjectId `
+    -p developerIpAddress=$developerIpAddress `
+    -p managementVmAdminUsername=$managementVmAdminUsername `
+    -p managementVmAdminSshPublicKey=$managementVmAdminSshPublicKey | ConvertFrom-Json
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
@@ -132,6 +140,7 @@ $sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdenti
 $managedDevopsPoolName = $mainBicepOutputs.managedDevopsPoolName.value
 $webAppName = $mainBicepOutputs.webAppName.value
 $webAppDataProtectionManagedHsmName = $mainBicepOutputs.webAppDataProtectionManagedHsmName.value
+$managementVmPublicIpAddress = $mainBicepOutputs.managementVmPublicIpAddress.value
 
 Pop-Location
 
@@ -208,3 +217,4 @@ Write-Host "Build pipeline agent pool updated to $managedDevopsPoolName."
 
 Write-Host "Deployment complete."
 Write-Host "You need to now set up a DNS A record: $domainName -> $firewallPublicIpAddress"
+Write-Host "Connect with SSH to management VM. Username: $managementVmAdminUsername, IP: $managementVmPublicIpAddress"

@@ -3,7 +3,7 @@ param naming object
 
 param appServiceEnvironmentResourceId string
 param appServicePlanResourceId string
-param keyVaultResourceId string
+// param keyVaultResourceId string
 param storageAccountResourceId string
 // param appVnetName string
 param subnets object
@@ -15,12 +15,12 @@ param dataProtectionKeyName string
 param appServiceEnvironmentDnsZoneResourceId string
 param appServiceEnvironmentIpAddress string
 
-var keyVaultName = last(split(keyVaultResourceId, '/'))
+// var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
 
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: keyVaultName
-}
+// resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+//   name: keyVaultName
+// }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
@@ -142,7 +142,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
 // }
 
 module webAppDns './webAppDns.bicep' = {
-  name: 'webAppDns'
+  name: '${deployment().name}-webAppDns'
   params: {
     webAppFqdn: webApp.properties.defaultHostName
     appServiceEnvironmentDnsZoneResourceId: appServiceEnvironmentDnsZoneResourceId

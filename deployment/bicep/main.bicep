@@ -22,6 +22,12 @@ param webAppDataProtectionKeyName string
 
 param initialKeyVaultAdminObjectId string
 
+param developerIpAddress string
+
+param managementVmAdminUsername string
+@secure()
+param managementVmAdminSshPublicKey string
+
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
   appGateway: 'agw-${suffix}'
@@ -32,15 +38,20 @@ var naming = {
   appVnetRouteTable: 'rt-app-${suffix}'
   appVnetSqlRouteTable: 'rt-app-sql-${suffix}'
   buildAgentPool: 'devops-pool-${suffix}'
+  buildAgentPoolIdentity: 'devops-pool-identity-${suffix}'
   firewall: 'afw-${suffix}'
   firewallManagementPip: 'pip-afw-mgmt-${suffix}'
   firewallPip: 'pip-afw-${suffix}'
   firewallPolicy: 'afw-policy-${suffix}'
-  keyVaultPrivateEndpoint: 'kv-pe-${suffix}'
   hubVnet: 'vnet-hub-${suffix}'
+  keyVaultPrivateEndpoint: 'kv-pe-${suffix}'
   logAnalytics: 'law-${suffix}'
   logAnalyticsPrivateEndpoint: 'law-pe-${suffix}'
   logAnalyticsPrivateLinkScope: 'law-pls-${suffix}'
+  managementVm: 'vmmgmt${suffix}'
+  managementVmNic: 'nic-vmmgmt-${suffix}'
+  managementVmPublicIp: 'pip-vmmgmt-${suffix}'
+  sqlDatabase: 'sqldb${suffix}'
   sqlManagedInstance: 'sql-${suffix}'
   storageAccount: 'sa${suffix}'
   storageAccountPrivateEndpoint: 'sa-pe-blob-${suffix}'
@@ -111,6 +122,10 @@ var appSubnets = {
     name: 'buildAgent'
     addressPrefix: '10.0.6.64/26'
   }
+  managementVm: {
+    name: 'managementVm'
+    addressPrefix: '10.0.6.128/26'
+  }
 }
 var appGatewayPrivateIpAddress = '10.0.4.4'
 
@@ -121,7 +136,7 @@ module hubVnet 'modules/hubVnet.bicep' = {
     naming: naming
     addressSpace: vnetAddressSpaces.hub
     subnets: hubSubnets
-    appVnetAddressSpace: vnetAddressSpaces.app
+    // appVnetAddressSpace: vnetAddressSpaces.app
   }
 }
 
@@ -150,6 +165,7 @@ module appVnet 'modules/appVnet.bicep' = {
     sqlNsgResourceId: sqlNsgResourceId
     sqlRouteTableResourceId: sqlRouteTableResourceId
     devOpsInfrastructureSpId: devOpsInfrastructureSpId
+    developerIpAddress: developerIpAddress
   }
 }
 
@@ -278,7 +294,7 @@ module webApp 'modules/webApp.bicep' = {
     naming: naming
     appServiceEnvironmentResourceId: appServiceEnvironment.outputs.appServiceEnvironmentResourceId
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
-    keyVaultResourceId: keyVault.outputs.webAppDataProtectionKeyVaultResourceId
+    // keyVaultResourceId: keyVault.outputs.webAppDataProtectionKeyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
     subnets: appSubnets
     appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
@@ -309,8 +325,24 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
   ]
 }
 
+module managementVm 'modules/managementVm.bicep' = {
+  name: '${deployment().name}-managementVm'
+  params: {
+    location: location
+    naming: naming
+    vnetName: naming.appVnet
+    subnetName: appSubnets.managementVm.name
+    adminUsername: managementVmAdminUsername
+    adminSshPublicKey: managementVmAdminSshPublicKey
+  }
+  dependsOn: [
+    appVnet
+  ]
+}
+
 output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
 output webAppName string = webApp.outputs.webAppName
 output webAppDataProtectionManagedHsmName string = keyVault.outputs.webAppDataProtectionKeyVaultName
+output managementVmPublicIpAddress string = managementVm.outputs.managementVmPublicIpAddress

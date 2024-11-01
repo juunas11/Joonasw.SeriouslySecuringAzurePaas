@@ -61,6 +61,15 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
   }
 }
 
+resource database 'Microsoft.Sql/managedInstances/databases@2023-08-01-preview' = {
+  parent: sqlManagedInstance
+  name: naming.sqlDatabase
+  location: location
+  properties: {
+    collation: 'SQL_Latin1_General_CP1_CI_AS'
+  }
+}
+
 output sqlManagedInstanceIdentityObjectId string = sqlManagedInstance.identity.principalId
 
 // I think the name here is not correct

@@ -69,6 +69,14 @@ Register an app with the following details:
   - In production you should make separate app registrations for development and production use
 - Add a self-signed certificate for authentication
 
+## Management VM
+
+An Ubuntu virtual machine is setup for troubleshooting and management by default.
+It allows connections to a public IP address with SSH from the IP address in config.
+You wouldn't normally have open SSH ports from a "seriously secured" application.
+Use something like Bastion to get more secured access.
+Unfortunately I don't have time/budget to setup that for this demo.
+
 ## Local development
 
 `dotnet ef database update -s Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web -p Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data`

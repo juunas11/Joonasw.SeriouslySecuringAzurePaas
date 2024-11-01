@@ -7,9 +7,20 @@ param azureDevOpsOrganizationUrl string
 param azureDevOpsProjectName string
 param devCenterProjectResourceId string
 
+resource devOpsPoolIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  location: location
+  name: naming.buildAgentPoolIdentity
+}
+
 resource managedDevopsPool 'Microsoft.DevOpsInfrastructure/pools@2024-04-04-preview' = {
   location: location
   name: naming.buildAgentPool
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${devOpsPoolIdentity.id}': {}
+    }
+  }
   properties: {
     organizationProfile: {
       kind: 'AzureDevOps'

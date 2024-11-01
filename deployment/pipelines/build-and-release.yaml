@@ -6,17 +6,19 @@ trigger:
       - main
 
 pool:
-  name: "devops-pool-757m7v3o4cgdk"
+  name: "devops-pool-x43ywukzvc6uu"
 
 variables:
   - name: SqlServer
-    value: "TODO.database.windows.net"
+    value: "sql-x43ywukzvc6uu.46cc585a7110.database.windows.net"
   - name: SqlDatabase
-    value: "TODO"
+    value: "sqldbx43ywukzvc6uu"
   - name: WebApp
-    value: "TODO"
+    value: "app-x43ywukzvc6uu"
   - name: ResourceGroup
-    value: "TODO"
+    value: "rg-securitypocs20241101"
+  - name: ManagedIdentityObjectId
+    value: "15b7a253-657f-4c41-a8f8-fd631fcbf6f8"
 
 steps:
   - checkout: self
@@ -42,6 +44,7 @@ steps:
     workingDirectory: "src"
 
   - pwsh: |
+      az login --identity --username $(ManagedIdentityObjectId)
       $accessToken = az account get-access-token --resource https://database.windows.net --query accessToken -o tsv
       Invoke-SqlCmd -ServerInstance "$(SqlServer)" -Database "$(SqlDatabase)" -AccessToken $accessToken -InputFile "$(Build.ArtifactStagingDirectory)/migration.sql"
     displayName: "Deploy EF migration script"

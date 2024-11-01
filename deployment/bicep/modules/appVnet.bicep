@@ -12,6 +12,8 @@ param firewallPrivateIpAddress string
 
 param devOpsInfrastructureSpId string
 
+param developerIpAddress string
+
 var denyAllInboundRule = {
   name: 'DenyAllInbound'
   properties: {
@@ -33,6 +35,19 @@ var denyAllOutboundRule = {
     access: 'Deny'
     protocol: '*'
     sourceAddressPrefix: '*'
+    sourcePortRange: '*'
+    destinationAddressPrefix: '*'
+    destinationPortRange: '*'
+  }
+}
+var allowManagementVmInboundRule = {
+  name: 'AllowManagementVmAnyInbound'
+  properties: {
+    priority: 4095
+    direction: 'Inbound'
+    access: 'Allow'
+    protocol: '*'
+    sourceAddressPrefix: subnets.managementVm.addressPrefix
     sourcePortRange: '*'
     destinationAddressPrefix: '*'
     destinationPortRange: '*'
@@ -84,47 +99,61 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           destinationPortRange: '80'
         }
       }
+      allowManagementVmInboundRule
       // denyAllInboundRule
-      // {
-      //   name: 'AllowVnetHttpsOutbound'
-      //   properties: {
-      //     priority: 100
-      //     direction: 'Outbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: '*'
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: 'VirtualNetwork'
-      //     destinationPortRange: '443'
-      //   }
-      // }
-      // {
-      //   name: 'AllowHubHttpsOutbound'
-      //   properties: {
-      //     priority: 200
-      //     direction: 'Outbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: '*'
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: hubAddressSpace
-      //     destinationPortRange: '443'
-      //   }
-      // }
-      // {
-      //   name: 'AllowVnetSqlOutbound'
-      //   properties: {
-      //     priority: 300
-      //     direction: 'Outbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: '*'
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: 'VirtualNetwork'
-      //     destinationPortRange: '1433'
-      //   }
-      // }
-      // denyAllOutboundRule
+      {
+        name: 'AllowMonitorHttpsOutbound'
+        properties: {
+          priority: 100
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: hubSubnets.monitor.addressPrefix
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'AllowSqlTdsOutbound'
+        properties: {
+          priority: 200
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.sql.addressPrefix
+          destinationPortRange: '1433'
+        }
+      }
+      {
+        name: 'AllowKeyVaultHttpsOutbound'
+        properties: {
+          priority: 300
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.appServiceKeyVault.addressPrefix
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'AllowStorageHttpsOutbound'
+        properties: {
+          priority: 400
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.storage.addressPrefix
+          destinationPortRange: '443'
+        }
+      }
+      denyAllOutboundRule
     ]
   }
 }
@@ -160,6 +189,7 @@ resource webAppInboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' =
           destinationPortRange: '443'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
     ]
@@ -274,6 +304,7 @@ resource appGatewayNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '*'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       {
         name: 'AllowAppServiceEnvironmentHttpsOutbound'
@@ -350,6 +381,7 @@ resource createdSqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = if
           destinationPortRange: '11000-11999'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
     ]
@@ -374,6 +406,7 @@ resource appServiceKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-
           destinationPortRange: '443'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
       // TODO: Let's see if this is needed
@@ -412,6 +445,7 @@ resource storageNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
       // TODO: Let's see if this is needed
@@ -450,6 +484,7 @@ resource sqlKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '443'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
       // TODO: Build agent?
@@ -475,6 +510,7 @@ resource storageKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01'
           destinationPortRange: '443'
         }
       }
+      allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
     ]
@@ -514,6 +550,42 @@ resource buildAgentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
         }
       }
       // Allow traffic destined out of the VNET
+    ]
+  }
+}
+
+resource managementVmNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+  name: 'nsg-app-${subnets.managementVm.name}'
+  location: location
+  properties: {
+    securityRules: [
+      {
+        name: 'AllowDeveloperSshInbound'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: developerIpAddress
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '22'
+        }
+      }
+      denyAllInboundRule
+      {
+        name: 'AllowAllOutbound'
+        properties: {
+          priority: 100
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+        }
+      }
     ]
   }
 }
@@ -718,6 +790,15 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
               }
             }
           ]
+        }
+      }
+      {
+        name: subnets.managementVm.name
+        properties: {
+          addressPrefix: subnets.managementVm.addressPrefix
+          networkSecurityGroup: {
+            id: managementVmNsg.id
+          }
         }
       }
     ]
