@@ -47,7 +47,7 @@ steps:
       ASPNETCORE_ENVIRONMENT: "Production"
 
   - pwsh: |
-      az login --identity --username $(ManagedIdentityObjectId)
+      az login --identity --username $(ManagedIdentityObjectId) --allow-no-subscriptions
       $accessToken = az account get-access-token --resource https://database.windows.net --query accessToken -o tsv
       Invoke-SqlCmd -ServerInstance "$(SqlServer)" -Database "$(SqlDatabase)" -AccessToken $accessToken -InputFile "$(Build.ArtifactStagingDirectory)/migration.sql"
     displayName: "Deploy EF migration script"
