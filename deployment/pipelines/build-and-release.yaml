@@ -39,6 +39,7 @@ steps:
     displayName: "Archive files"
 
   - pwsh: |
+      dotnet tool restore
       dotnet ef migrations script -o $(Build.ArtifactStagingDirectory)/migration.sql --idempotent -p Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data -s Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web
     displayName: "Generate EF migration script"
     workingDirectory: "src"
