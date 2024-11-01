@@ -5,6 +5,7 @@ param appServiceEnvironmentResourceId string
 param appServicePlanResourceId string
 // param keyVaultResourceId string
 param storageAccountResourceId string
+param storageWebAppDataProtectionContainerName string
 // param appVnetName string
 param subnets object
 // param appServiceDnsZoneResourceId string
@@ -14,6 +15,8 @@ param dataProtectionManagedHsmName string
 param dataProtectionKeyName string
 param appServiceEnvironmentDnsZoneResourceId string
 param appServiceEnvironmentIpAddress string
+param sqlServerFqdn string
+param sqlDatabaseName string
 
 // var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
@@ -24,6 +27,16 @@ var storageAccountName = last(split(storageAccountResourceId, '/'))
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
+}
+
+resource storageAccountBlobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' existing = {
+  parent: storageAccount
+  name: 'default'
+}
+
+resource storageAccountContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' existing = {
+  parent: storageAccountBlobService
+  name: storageWebAppDataProtectionContainerName
 }
 
 resource webApp 'Microsoft.Web/sites@2023-12-01' = {
@@ -42,16 +55,14 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       appSettings: [
         {
-          // TODO: Set SQL server and DB from params
           name: 'ConnectionStrings__Sql'
-          value: 'Server=tcp:sql-x43ywukzvc6uu.46cc585a7110.${environment().suffixes.sqlServerHostname},1433;Database=sqldbx43ywukzvc6uu;Encrypt=True;TrustServerCertificate=False;Authentication="Active Directory Managed Identity"'
+          value: 'Server=${sqlServerFqdn};Database=${sqlDatabaseName};Encrypt=True;Authentication=Active Directory Managed Identity'
         }
         {
           name: 'DataProtection__StorageBlobUri'
           value: '${storageAccount.properties.primaryEndpoints.blob}${naming.storageWebAppDataProtectionContainer}/keys.xml'
         }
         {
-          // Example: https://kv-app-dp-zktdtyvkxu3lk.managedhsm.azure.net/keys/kv-app-dp-key
           name: 'DataProtection__KeyVaultKeyUri'
           value: 'https://${dataProtectionManagedHsmName}.managedhsm.azure.net/keys/${dataProtectionKeyName}'
         }
@@ -59,6 +70,19 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString
         }
+        {
+          name: 'EntraId__Domain'
+          value: ''
+        }
+        {
+          name: 'EntraId__TenantId'
+          value: ''
+        }
+        {
+          name: 'EntraId__ClientId'
+          value: ''
+        }
+        // TODO: Entra settings (how do we configure "organizations" for the domain)
       ]
       alwaysOn: true
       ftpsState: 'Disabled'
@@ -76,6 +100,12 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           ipAddress: subnets.appGateway.addressPrefix
           action: 'Allow'
         }
+        {
+          priority: 200
+          name: 'AllowManagementVm'
+          ipAddress: subnets.managementVm.addressPrefix
+          action: 'Allow'
+        }
       ]
       scmIpSecurityRestrictionsDefaultAction: 'Deny'
       scmIpSecurityRestrictions: [
@@ -83,6 +113,12 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           priority: 100
           name: 'AllowBuildAgent'
           ipAddress: subnets.buildAgent.addressPrefix
+          action: 'Allow'
+        }
+        {
+          priority: 200
+          name: 'AllowManagementVm'
+          ipAddress: subnets.managementVm.addressPrefix
           action: 'Allow'
         }
       ]
@@ -129,18 +165,6 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
 //   }
 // }
 
-// resource vnetIntegration 'Microsoft.Web/sites/networkConfig@2023-12-01' = {
-//   parent: webApp
-//   name: 'virtualNetwork'
-//   properties: {
-//     subnetResourceId: resourceId(
-//       'Microsoft.Network/virtualNetworks/subnets',
-//       appVnetName,
-//       subnets.app.webAppOutbound.name
-//     )
-//   }
-// }
-
 module webAppDns './webAppDns.bicep' = {
   name: '${deployment().name}-webAppDns'
   params: {
@@ -150,27 +174,14 @@ module webAppDns './webAppDns.bicep' = {
   }
 }
 
-// TODO: Check this role works with managed HSM since the data actions are Microsoft.KeyVault/vaults/keys/wrap etc
-
-// resource webAppKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-//   name: guid(naming.webApp, keyVault.id, 'Key Vault Crypto Service Encryption User')
-//   scope: keyVault
-//   properties: {
-//     principalId: webApp.identity.principalId
-//     principalType: 'ServicePrincipal'
-//     // Key Vault Crypto Service Encryption User
-//     roleDefinitionId: subscriptionResourceId(
-//       'Microsoft.Authorization/roleDefinitions',
-//       'e147488a-f6f5-4113-8e2d-b22465e65bf6'
-//     )
-//   }
-// }
-
-// TODO: Change role assignment to container level
-
 resource webAppStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(naming.webApp, storageAccount.id, 'Storage Blob Data Contributor')
-  scope: storageAccount
+  name: guid(
+    naming.webApp,
+    storageAccount.id,
+    storageWebAppDataProtectionContainerName,
+    'Storage Blob Data Contributor'
+  )
+  scope: storageAccountContainer
   properties: {
     principalId: webApp.identity.principalId
     principalType: 'ServicePrincipal'

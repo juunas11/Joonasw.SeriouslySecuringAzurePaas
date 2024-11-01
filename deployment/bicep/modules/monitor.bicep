@@ -208,7 +208,6 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-02-01' = {
       }
     ]
   }
-  // TODO: See if this fixes the first deployment issues with the private endpoint
   dependsOn: [
     agentSvcDnsZone
     monitorDnsZone

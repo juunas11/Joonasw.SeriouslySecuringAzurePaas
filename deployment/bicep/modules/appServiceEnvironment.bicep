@@ -19,8 +19,7 @@ resource appServiceEnvironment 'Microsoft.Web/hostingEnvironments@2023-12-01' = 
       properties: {
         ftpEnabled: false
         remoteDebugEnabled: false
-        // Can disable this after first deployment to prevent private endpoint creation
-        allowNewPrivateEndpointConnections: true
+        allowNewPrivateEndpointConnections: false
       }
     }
     upgradePreference: 'Late'

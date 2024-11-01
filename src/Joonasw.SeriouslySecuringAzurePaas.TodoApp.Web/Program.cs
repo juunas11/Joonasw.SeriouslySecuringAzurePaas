@@ -26,9 +26,9 @@ public class Program
             telemetryClient = new TelemetryClient(telemetryConfiguration);
         }
 
-        // Add services to the container.
         try
         {
+            // TODO: Fix 403 from AGW on sign out
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApp(
                     msIdOptions =>
@@ -106,6 +106,8 @@ public class Program
                     options.IncludeSubDomains = false;
                 });
             }
+
+            builder.Services.AddApplicationInsightsTelemetry();
 
             var app = builder.Build();
 

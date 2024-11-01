@@ -12,10 +12,6 @@ param adminGroupId string
 // - 4-8 vCores
 // - default maintenance window
 // - not zone redundant
-
-// TODO: Check if we can grant the "Read" permissions for the MI that it needs. Can be done through Portal too, but is a manual step.
-// Yeah, we can. The system-assigned MI needs the "Directory Readers" role on the tenant.
-
 resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' = {
   name: naming.sqlManagedInstance
   location: location
@@ -72,10 +68,5 @@ resource database 'Microsoft.Sql/managedInstances/databases@2023-08-01-preview' 
 }
 
 output sqlManagedInstanceIdentityObjectId string = sqlManagedInstance.identity.principalId
-
-// I think the name here is not correct
-// resource dnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-//   name: 'privatelink.${naming.sqlManagedInstance}.database.windows.net'
-//   location: 'global'
-//   properties: {}
-// }
+output sqlManagedInstanceFqdn string = sqlManagedInstance.properties.fullyQualifiedDomainName
+output sqlDatabaseName string = database.name

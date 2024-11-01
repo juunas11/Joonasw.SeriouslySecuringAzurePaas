@@ -5,6 +5,7 @@ param vnetName string
 param appGatewaySubnetName string
 param appGatewayPrivateIpAddress string
 param webAppFqdn string
+param appDomainName string
 
 @secure()
 param certificateData string
@@ -187,6 +188,13 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
               'httpsSettings'
             )
           }
+          rewriteRuleSet: {
+            id: resourceId(
+              'Microsoft.Network/applicationGateways/rewriteRuleSets',
+              naming.appGateway,
+              'RewriteAuthLocationRedirectUri'
+            )
+          }
         }
       }
       {
@@ -225,6 +233,38 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
           }
           includePath: true
           includeQueryString: true
+        }
+      }
+    ]
+    rewriteRuleSets: [
+      {
+        // The App Service redirects the user to login with Entra ID
+        // and the redirect_uri parameter contains the App Service FQDN.
+        // This rule rewrites the redirect_uri to use the domain that
+        // is mapped to the Firewall's public IP.
+        name: 'RewriteAuthLocationRedirectUri'
+        properties: {
+          rewriteRules: [
+            {
+              name: 'RewriteAuthLocationRedirectUri'
+              ruleSequence: 100
+              conditions: [
+                {
+                  variable: 'http_resp_Location'
+                  pattern: '(.*)${webAppFqdn}(.*)'
+                  ignoreCase: true
+                }
+              ]
+              actionSet: {
+                responseHeaderConfigurations: [
+                  {
+                    headerName: 'Location'
+                    headerValue: '{http_resp_Location_1}${appDomainName}{http_resp_Location_2}'
+                  }
+                ]
+              }
+            }
+          ]
         }
       }
     ]

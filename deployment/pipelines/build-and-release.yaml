@@ -9,16 +9,7 @@ pool:
   name: "devops-pool-x43ywukzvc6uu"
 
 variables:
-  - name: SqlServer
-    value: "sql-x43ywukzvc6uu.46cc585a7110.database.windows.net"
-  - name: SqlDatabase
-    value: "sqldbx43ywukzvc6uu"
-  - name: WebApp
-    value: "app-x43ywukzvc6uu"
-  - name: ResourceGroup
-    value: "rg-securitypocs20241101"
-  - name: ManagedIdentityObjectId
-    value: "15b7a253-657f-4c41-a8f8-fd631fcbf6f8"
+  - template: variables.yaml
 
 steps:
   - checkout: self

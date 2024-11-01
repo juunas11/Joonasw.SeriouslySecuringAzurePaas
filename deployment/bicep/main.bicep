@@ -3,6 +3,7 @@ param location string = resourceGroup().location
 param sqlAdminGroupName string
 param sqlAdminGroupId string
 
+param appDomainName string
 @secure()
 param appGatewayCertificateData string
 @secure()
@@ -148,6 +149,7 @@ module firewall 'modules/firewall.bicep' = {
     firewallSubnetResourceId: hubVnet.outputs.firewallSubnetResourceId
     firewallManagementSubnetResourceId: hubVnet.outputs.firewallManagementSubnetResourceId
     appGatewayPrivateIpAddress: appGatewayPrivateIpAddress
+    hubSubnets: hubSubnets
     appSubnets: appSubnets
   }
 }
@@ -296,6 +298,7 @@ module webApp 'modules/webApp.bicep' = {
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
     // keyVaultResourceId: keyVault.outputs.webAppDataProtectionKeyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
+    storageWebAppDataProtectionContainerName: naming.storageWebAppDataProtectionContainer
     subnets: appSubnets
     appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
     appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
@@ -305,6 +308,8 @@ module webApp 'modules/webApp.bicep' = {
     appInsightsConnectionString: monitor.outputs.appInsightsConnectionString
     dataProtectionManagedHsmName: keyVault.outputs.webAppDataProtectionKeyVaultName
     dataProtectionKeyName: webAppDataProtectionKeyName
+    sqlServerFqdn: sql.outputs.sqlManagedInstanceFqdn
+    sqlDatabaseName: sql.outputs.sqlDatabaseName
   }
 }
 
@@ -319,6 +324,7 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
     certificateData: appGatewayCertificateData
     certificatePassword: appGatewayCertificatePassword
     webAppFqdn: webApp.outputs.webAppFqdn
+    appDomainName: appDomainName
   }
   dependsOn: [
     appVnet
@@ -343,6 +349,9 @@ module managementVm 'modules/managementVm.bicep' = {
 output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
+output managedDevopsPoolIdentityObjectId string = buildAgent.outputs.managedDevopsPoolIdentityObjectId
 output webAppName string = webApp.outputs.webAppName
 output webAppDataProtectionManagedHsmName string = keyVault.outputs.webAppDataProtectionKeyVaultName
 output managementVmPublicIpAddress string = managementVm.outputs.managementVmPublicIpAddress
+output sqlServerFqdn string = sql.outputs.sqlManagedInstanceFqdn
+output sqlDatabaseName string = sql.outputs.sqlDatabaseName

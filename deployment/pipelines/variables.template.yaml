@@ -1,0 +1,11 @@
+variables:
+  - name: SqlServer
+    value: "$(SqlServer)"
+  - name: SqlDatabase
+    value: "$(SqlDatabase)"
+  - name: WebApp
+    value: "$(WebApp)"
+  - name: ResourceGroup
+    value: "$(ResourceGroup)"
+  - name: ManagedIdentityObjectId
+    value: "$(ManagedIdentityObjectId)"
