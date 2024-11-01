@@ -58,6 +58,7 @@ resource sqlManagedInstance 'Microsoft.Sql/managedInstances@2023-08-01-preview' 
       tenantId: tenant().tenantId
       principalType: 'Group'
     }
+    publicDataEndpointEnabled: false
   }
 }
 
