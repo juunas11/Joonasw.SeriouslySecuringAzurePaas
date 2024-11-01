@@ -537,9 +537,35 @@ resource buildAgentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
         }
       }
       {
-        name: 'DenyVnetOutbound'
+        name: 'AllowSqlTdsOutbound'
         properties: {
           priority: 200
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.sql.addressPrefix
+          destinationPortRange: '1433'
+        }
+      }
+      {
+        name: 'AllowSqlRedirectOutbound'
+        properties: {
+          priority: 300
+          direction: 'Outbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '*'
+          sourcePortRange: '*'
+          destinationAddressPrefix: subnets.sql.addressPrefix
+          destinationPortRange: '11000-11999'
+        }
+      }
+      {
+        name: 'DenyVnetOutbound'
+        properties: {
+          priority: 400
           direction: 'Outbound'
           access: 'Deny'
           protocol: '*'
