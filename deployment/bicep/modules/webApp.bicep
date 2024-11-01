@@ -42,9 +42,9 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       appSettings: [
         {
-          // Example: Server=tcp:sql-zktdtyvkxu3lk.587b98789138.database.windows.net,1433;Persist Security Info=False;User ID={your_username};Password={your_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Authentication="Active Directory Password";
+          // TODO: Set SQL server and DB from params
           name: 'ConnectionStrings__Sql'
-          value: 'TODO'
+          value: 'Server=tcp:sql-x43ywukzvc6uu.46cc585a7110.${environment().suffixes.sqlServerHostname},1433;Database=sqldbx43ywukzvc6uu;Encrypt=True;TrustServerCertificate=False;Authentication="Active Directory Managed Identity"'
         }
         {
           name: 'DataProtection__StorageBlobUri'
