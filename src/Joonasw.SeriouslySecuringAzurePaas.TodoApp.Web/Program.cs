@@ -60,15 +60,21 @@ public class Program
         // and Azure Key Vault for encrypting the keys.
         // This way you can only get the keys if you have access
         // to both the storage account and the key vault.
-        TokenCredential tokenCredential = builder.Environment.IsDevelopment()
-            ? new AzureCliCredential(new AzureCliCredentialOptions
-            {
-                TenantId = builder.Configuration["DataProtection:EntraTenantId"]
-            })
-            : new ManagedIdentityCredential();
-        builder.Services.AddDataProtection()
-            .PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["DataProtection:StorageBlobUri"]!), tokenCredential)
-            .ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["DataProtection:KeyVaultKeyUri"]!), tokenCredential);
+        var dataProtectionStorabeBlobUri = builder.Configuration["DataProtection:StorageBlobUri"];
+        var dataProtectionKeyVaultKeyUri = builder.Configuration["DataProtection:KeyVaultKeyUri"];
+        if (!string.IsNullOrEmpty(dataProtectionStorabeBlobUri)
+            && !string.IsNullOrEmpty(dataProtectionKeyVaultKeyUri))
+        {
+            TokenCredential tokenCredential = builder.Environment.IsDevelopment()
+                ? new AzureCliCredential(new AzureCliCredentialOptions
+                {
+                    TenantId = builder.Configuration["DataProtection:EntraTenantId"]
+                })
+                : new ManagedIdentityCredential();
+            builder.Services.AddDataProtection()
+                .PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["DataProtection:StorageBlobUri"]!), tokenCredential)
+                .ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["DataProtection:KeyVaultKeyUri"]!), tokenCredential);
+        }
 
         if (!builder.Environment.IsDevelopment())
         {
