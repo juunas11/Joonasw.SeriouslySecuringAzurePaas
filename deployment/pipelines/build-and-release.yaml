@@ -6,7 +6,7 @@ trigger:
       - main
 
 pool:
-  name: "devops-pool-x43ywukzvc6uu"
+  name: "devops-pool-ppujjp5a5djlw"
 
 variables:
   - template: variables.yaml
@@ -54,3 +54,4 @@ steps:
       slotName: "production"
       resourceGroupName: "$(ResourceGroup)"
     displayName: "Deploy to Azure App Service"
+

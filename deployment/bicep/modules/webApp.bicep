@@ -195,3 +195,4 @@ resource webAppStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@20
 
 output webAppFqdn string = webApp.properties.defaultHostName
 output webAppName string = webApp.name
+output webAppIdentityObjectId string = webApp.identity.principalId

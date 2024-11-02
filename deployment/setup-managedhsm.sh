@@ -1,33 +1,51 @@
 #!/bin/bash
 
 SUBSCRIPTION_ID=f532ecab-6efb-4f51-8848-b7a7e9ab4d6d
-HSM_NAME=kv-app-dp-x43ywukzvc6uu
+HSM_NAME=kv-app-dp-ppujjp5a5djlw
 ADMIN_OBJECT_ID=91a51582-c163-4491-a9da-1b76fbcb906b
-WEB_APP_OBJECT_ID=04e32483-2fd0-4b92-8513-a3c00046b9a0
+WEB_APP_OBJECT_ID=baab061f-978a-47df-8b89-6d4931a5f4ff
 DATA_PROTECTION_KEY_NAME=DataProtectionKeyEncryptionKey
+TENANT_ID=0d7e0754-812c-4a0f-883f-5f34cf78d354
+
+ADMIN_ROLE_ASSIGNMENT_ID=$(uuidgen)
+WEB_APP_ROLE_ASSIGNMENT_ID=$(uuidgen)
 
 # Install Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
+echo "Azure CLI installed"
+
 # Login to Azure
 az login -t "$TENANT_ID"
 
+echo "Logged in to Azure"
+
 # Create certificates for HSM activation (min 3 RSA keys are needed)
 # NOTE: Normally you would need to store these extremely securely, you need them for DR purposes
-# TODO: These all required input, could we add them as params so we don't have to type them in?
-openssl req -newkey rsa:2048 -nodes -keyout cert_0.key -x509 -days 365 -out cert_0.cer
-openssl req -newkey rsa:2048 -nodes -keyout cert_1.key -x509 -days 365 -out cert_1.cer
-openssl req -newkey rsa:2048 -nodes -keyout cert_2.key -x509 -days 365 -out cert_2.cer
+openssl req -newkey rsa:2048 -nodes -keyout cert_0.key -x509 -days 365 -out cert_0.cer -subj "/C=FI/ST=Uusimaa/L=Helsinki/O=SSAP/OU=TodoAppDev/CN=cert0"
+openssl req -newkey rsa:2048 -nodes -keyout cert_1.key -x509 -days 365 -out cert_1.cer -subj "/C=FI/ST=Uusimaa/L=Helsinki/O=SSAP/OU=TodoAppDev/CN=cert1"
+openssl req -newkey rsa:2048 -nodes -keyout cert_2.key -x509 -days 365 -out cert_2.cer -subj "/C=FI/ST=Uusimaa/L=Helsinki/O=SSAP/OU=TodoAppDev/CN=cert2"
 
-# TODO: Random guids for role assignment names
-# TODO: Use variables
-# TODO: Replace variables in deploy script
+echo "Certificates created for HSM activation"
 
 # Activate HSM
-az keyvault security-domain download --hsm-name kv-app-dp-x43ywukzvc6uu --sd-wrapping-keys ./cert_0.cer ./cert_1.cer ./cert_2.cer --sd-quorum 2 --security-domain-file SSAPHSM-SD.json
+echo "Activating HSM, this will take a moment..."
+az keyvault security-domain download --hsm-name "$HSM_NAME" --sd-wrapping-keys ./cert_0.cer ./cert_1.cer ./cert_2.cer --sd-quorum 2 --security-domain-file SSAPHSM-SD.json
+
+echo "HSM activated"
+
 # Assign role to admin so we can create a key
-az keyvault role assignment create --role 'Managed HSM Crypto User' --scope /keys --assignee-object-id 91a51582-c163-4491-a9da-1b76fbcb906b --assignee-principal-type User -n 29d5d763-7ee3-4831-b28d-741a89830a5c --hsm-name kv-app-dp-x43ywukzvc6uu
+az keyvault role assignment create --hsm-name "$HSM_NAME" --role 'Managed HSM Crypto User' --scope /keys --assignee-object-id "$ADMIN_OBJECT_ID" --assignee-principal-type User -n "$ADMIN_ROLE_ASSIGNMENT_ID"
+
+echo "Role assigned to admin"
+
 # Create data protection key
-az keyvault key create -n DataProtectionKeyEncryptionKey --kty RSA-HSM -p hsm --size 4096 --hsm-name kv-app-dp-x43ywukzvc6uu --subscription f532ecab-6efb-4f51-8848-b7a7e9ab4d6d --ops wrapKey unwrapKey
+az keyvault key create --hsm-name "$HSM_NAME" -n "$DATA_PROTECTION_KEY_NAME" --kty RSA-HSM -p hsm --size 4096 --subscription "$SUBSCRIPTION_ID" --ops wrapKey unwrapKey
+
+echo "Data protection key created"
+
 # Assign role to web app so it can use the key
-az keyvault role assignment create --role 'Managed HSM Crypto Service Encryption User' --scope /keys/DataProtectionKeyEncryptionKey --assignee-object-id 04e32483-2fd0-4b92-8513-a3c00046b9a0 --assignee-principal-type ServicePrincipal -n b67b9667-65b2-4361-89c0-37a526ea81d0 --hsm-name kv-app-dp-x43ywukzvc6uu
+az keyvault role assignment create --hsm-name "$HSM_NAME" --role 'Managed HSM Crypto Service Encryption User' --scope "/keys/$DATA_PROTECTION_KEY_NAME" --assignee-object-id "$WEB_APP_OBJECT_ID" --assignee-principal-type ServicePrincipal -n "$WEB_APP_ROLE_ASSIGNMENT_ID"
+
+echo "Role assigned to web app"
+

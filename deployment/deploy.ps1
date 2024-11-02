@@ -141,6 +141,7 @@ $sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdenti
 $managedDevopsPoolName = $mainBicepOutputs.managedDevopsPoolName.value
 $managedDevopsPoolIdentityObjectId = $mainBicepOutputs.managedDevopsPoolIdentityObjectId.value
 $webAppName = $mainBicepOutputs.webAppName.value
+$webAppIdentityObjectId = $mainBicepOutputs.webAppIdentityObjectId.value
 $webAppDataProtectionManagedHsmName = $mainBicepOutputs.webAppDataProtectionManagedHsmName.value
 $managementVmPublicIpAddress = $mainBicepOutputs.managementVmPublicIpAddress.value
 $sqlServerFqdn = $mainBicepOutputs.sqlServerFqdn.value
@@ -179,15 +180,27 @@ Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yaml) -Va
 Write-Host "Build pipeline agent pool updated to $managedDevopsPoolName."
 
 $variablesFileContent = Get-Content -Path (Join-Path $PSScriptRoot pipelines variables.template.yaml) -Raw
-$variablesFileContent = $variablesFileContent -replace '$(SqlServer)', $sqlServerFqdn
-$variablesFileContent = $variablesFileContent -replace '$(SqlDatabase)', $sqlDatabaseName
-$variablesFileContent = $variablesFileContent -replace '$(WebApp)', $webAppName
-$variablesFileContent = $variablesFileContent -replace '$(ResourceGroup)', $resourceGroup
-$variablesFileContent = $variablesFileContent -replace '$(ManagedIdentityObjectId)', $managedDevopsPoolIdentityObjectId
+$variablesFileContent = $variablesFileContent -replace '\$\(SqlServer\)', $sqlServerFqdn
+$variablesFileContent = $variablesFileContent -replace '\$\(SqlDatabase\)', $sqlDatabaseName
+$variablesFileContent = $variablesFileContent -replace '\$\(WebApp\)', $webAppName
+$variablesFileContent = $variablesFileContent -replace '\$\(ResourceGroup\)', $resourceGroup
+$variablesFileContent = $variablesFileContent -replace '\$\(ManagedIdentityObjectId\)', $managedDevopsPoolIdentityObjectId
 
 Set-Content -Path (Join-Path $PSScriptRoot pipelines variables.yaml) -Value $variablesFileContent
 
 Write-Host "Build pipeline variables file updated."
+
+# Update management VM script variables
+
+$managedHsmScript = Get-Content -Path (Join-Path $PSScriptRoot setup-managedhsm.sh) -Raw
+$managedHsmScript = $managedHsmScript -replace '(SUBSCRIPTION_ID=.*)', "SUBSCRIPTION_ID=$subscriptionId"
+$managedHsmScript = $managedHsmScript -replace '(HSM_NAME=.*)', "HSM_NAME=$webAppDataProtectionManagedHsmName"
+$managedHsmScript = $managedHsmScript -replace '(ADMIN_OBJECT_ID=.*)', "ADMIN_OBJECT_ID=$initialKeyVaultAdminObjectId"
+$managedHsmScript = $managedHsmScript -replace '(WEB_APP_OBJECT_ID=.*)', "WEB_APP_OBJECT_ID=$webAppIdentityObjectId"
+$managedHsmScript = $managedHsmScript -replace '(DATA_PROTECTION_KEY_NAME=.*)', "DATA_PROTECTION_KEY_NAME=$keyVaultKeyName"
+$managedHsmScript = $managedHsmScript -replace '(TENANT_ID=.*)', "TENANT_ID=$tenantId"
+
+Set-Content -Path (Join-Path $PSScriptRoot setup-managedhsm.sh) -Value $managedHsmScript
 
 Write-Host "Deployment complete."
 Write-Host "You need to now set up a DNS A record: $domainName -> $firewallPublicIpAddress"

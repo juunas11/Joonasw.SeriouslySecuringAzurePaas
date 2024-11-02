@@ -207,6 +207,14 @@ module monitor 'modules/monitor.bicep' = {
   ]
 }
 
+module firewallDiagnostics 'modules/firewallDiagnostics.bicep' = {
+  name: '${deployment().name}-firewallDiagnostics'
+  params: {
+    firewallResourceId: firewall.outputs.firewallResourceId
+    logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
+  }
+}
+
 module sql 'modules/sql.bicep' = {
   name: '${deployment().name}-sql'
   params: {
@@ -351,6 +359,7 @@ output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanc
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
 output managedDevopsPoolIdentityObjectId string = buildAgent.outputs.managedDevopsPoolIdentityObjectId
 output webAppName string = webApp.outputs.webAppName
+output webAppIdentityObjectId string = webApp.outputs.webAppIdentityObjectId
 output webAppDataProtectionManagedHsmName string = keyVault.outputs.webAppDataProtectionKeyVaultName
 output managementVmPublicIpAddress string = managementVm.outputs.managementVmPublicIpAddress
 output sqlServerFqdn string = sql.outputs.sqlManagedInstanceFqdn
