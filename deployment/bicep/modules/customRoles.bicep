@@ -9,12 +9,20 @@ resource developerProductionRole 'Microsoft.Authorization/roleDefinitions@2022-0
     permissions: [
       {
         actions: [
+          // TODO: Test these again if we can read metrics or not
           // Read and restart App Services
           'Microsoft.Web/sites/read'
+          'Microsoft.Web/sites/config/Read'
           'Microsoft.Web/sites/restart/action'
-          'Microsoft.Web/sites/slots/read'
-          'Microsoft.Web/sites/slots/restart/action'
+          'Microsoft.Insights/metrics/read'
+          'Microsoft.Web/sites/metrics/read'
+          'Microsoft.Web/sites/providers/Microsoft.Insights/metricDefinitions/Read'
+          'Microsoft.Web/sites/usages/read'
           'Microsoft.Web/serverfarms/read'
+          'Microsoft.Web/serverfarms/usages/read'
+          'Microsoft.Web/serverfarms/metrics/read'
+          'Microsoft.Web/serverfarms/providers/Microsoft.Insights/metricDefinitions/Read'
+          'Microsoft.Web/hostingEnvironments/Read'
           // Open support tickets
           'Microsoft.Support/*'
         ]

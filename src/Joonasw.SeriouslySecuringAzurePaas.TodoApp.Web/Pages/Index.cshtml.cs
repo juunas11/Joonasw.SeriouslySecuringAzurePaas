@@ -77,17 +77,14 @@ public class IndexModel : PageModel
     {
         var (tenantId, userId) = GetTenantAndUserId();
 
-        var todo = await _context.TodoItems
+        var rowsDeleted = await _context.TodoItems
             .Where(t => t.TenantId == tenantId && t.UserId == userId && t.Id == id)
-            .SingleOrDefaultAsync();
+            .ExecuteDeleteAsync();
 
-        if (todo == null)
+        if (rowsDeleted == 0)
         {
             return NotFound();
         }
-
-        _context.TodoItems.Remove(todo);
-        await _context.SaveChangesAsync();
 
         return RedirectToPage();
     }

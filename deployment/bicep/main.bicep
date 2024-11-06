@@ -348,6 +348,7 @@ output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
 output managedDevopsPoolIdentityObjectId string = buildAgent.outputs.managedDevopsPoolIdentityObjectId
+output managedDevopsPoolIdentityName string = buildAgent.outputs.managedDevopsPoolIdentityName
 output webAppName string = webApp.outputs.webAppName
 output webAppIdentityObjectId string = webApp.outputs.webAppIdentityObjectId
 output webAppDataProtectionManagedHsmName string = managedHsm.outputs.webAppDataProtectionManagedHsmName

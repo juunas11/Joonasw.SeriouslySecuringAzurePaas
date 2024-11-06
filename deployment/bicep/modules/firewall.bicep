@@ -124,6 +124,7 @@ resource buildAgentRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollec
             destinationPorts: [
               '80'
               '443'
+              '1688' // KMS
             ]
             sourceAddresses: [
               appSubnets.buildAgent.addressPrefix

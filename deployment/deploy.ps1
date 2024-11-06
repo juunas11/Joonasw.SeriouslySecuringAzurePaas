@@ -146,6 +146,7 @@ $firewallPublicIpAddress = $mainBicepOutputs.firewallPublicIpAddress.value
 $sqlManagedInstanceIdentityObjectId = $mainBicepOutputs.sqlManagedInstanceIdentityObjectId.value
 $managedDevopsPoolName = $mainBicepOutputs.managedDevopsPoolName.value
 $managedDevopsPoolIdentityObjectId = $mainBicepOutputs.managedDevopsPoolIdentityObjectId.value
+$managedDevopsPoolIdentityName = $mainBicepOutputs.managedDevopsPoolIdentityName.value
 $webAppName = $mainBicepOutputs.webAppName.value
 $webAppIdentityObjectId = $mainBicepOutputs.webAppIdentityObjectId.value
 $webAppDataProtectionManagedHsmName = $mainBicepOutputs.webAppDataProtectionManagedHsmName.value
@@ -161,7 +162,7 @@ $buildAndReleasePipeline = Get-Content -Path (Join-Path $PSScriptRoot pipelines 
 
 $buildAndReleasePipeline = $buildAndReleasePipeline -replace '(devops-pool-[\da-z]*)', $managedDevopsPoolName
 
-Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yaml) -Value $buildAndReleasePipeline
+Set-Content -Path (Join-Path $PSScriptRoot pipelines build-and-release.yaml) -Value $buildAndReleasePipeline -NoNewline
 
 Write-Host "Build pipeline agent pool updated to $managedDevopsPoolName."
 
@@ -172,7 +173,7 @@ $variablesFileContent = $variablesFileContent -replace '\$\(WebApp\)', $webAppNa
 $variablesFileContent = $variablesFileContent -replace '\$\(ResourceGroup\)', $resourceGroup
 $variablesFileContent = $variablesFileContent -replace '\$\(ManagedIdentityObjectId\)', $managedDevopsPoolIdentityObjectId
 
-Set-Content -Path (Join-Path $PSScriptRoot pipelines variables.yaml) -Value $variablesFileContent
+Set-Content -Path (Join-Path $PSScriptRoot pipelines variables.yaml) -Value $variablesFileContent -NoNewline
 
 Write-Host "Build pipeline variables file updated."
 
@@ -186,11 +187,21 @@ $managedHsmScript = $managedHsmScript -replace '(WEB_APP_OBJECT_ID=.*)', "WEB_AP
 $managedHsmScript = $managedHsmScript -replace '(DATA_PROTECTION_KEY_NAME=.*)', "DATA_PROTECTION_KEY_NAME=$webAppDataProtectionKeyName"
 $managedHsmScript = $managedHsmScript -replace '(TENANT_ID=.*)', "TENANT_ID=$tenantId"
 
-Set-Content -Path (Join-Path $PSScriptRoot setup-managedhsm.sh) -Value $managedHsmScript
+Set-Content -Path (Join-Path $PSScriptRoot setup-managedhsm.sh) -Value $managedHsmScript -NoNewline
 
-# TODO: Update SQL setup script
+$sqlSetupScript = Get-Content -Path (Join-Path $PSScriptRoot setup-sql.sh) -Raw
+$sqlSetupScript = $sqlSetupScript -replace '(DEVOPS_POOL_IDENTITY_NAME=.*)', "DEVOPS_POOL_IDENTITY_NAME=$managedDevopsPoolIdentityName"
+$sqlSetupScript = $sqlSetupScript -replace '(WEB_APP_NAME=.*)', "WEB_APP_NAME=$webAppName"
+$sqlSetupScript = $sqlSetupScript -replace '(SQL_SERVER_FQDN=.*)', "SQL_SERVER_FQDN=$sqlServerFqdn"
+$sqlSetupScript = $sqlSetupScript -replace '(SQL_DATABASE_NAME=.*)', "SQL_DATABASE_NAME=$sqlDatabaseName"
+
+Set-Content -Path (Join-Path $PSScriptRoot setup-sql.sh) -Value $sqlSetupScript -NoNewline
+
+Write-Host "Management VM setup scripts updated."
 
 # Assign Directory Readers role to SQL MI managed identity
+
+Write-Host "Assigning Directory Readers role to SQL MI managed identity..."
 
 $directoryReadersRoleId = (Get-MgDirectoryRole -Filter "displayName eq 'Directory Readers'").Id
 if ($null -eq $directoryReadersRoleId) {
