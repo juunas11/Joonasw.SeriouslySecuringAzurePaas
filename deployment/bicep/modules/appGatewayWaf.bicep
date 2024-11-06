@@ -21,6 +21,7 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
         {
           ruleSetType: 'OWASP'
           ruleSetVersion: '3.2'
+          // TODO: Add exclusion for .AspNetCore.Cookies and the anti-forgery cookie at least for SQL comment
         }
         {
           ruleSetType: 'Microsoft_BotManagerRuleSet'
