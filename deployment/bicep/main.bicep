@@ -19,15 +19,19 @@ param devCenterProjectResourceId string
 param devOpsInfrastructureSpId string
 
 param webAppDataProtectionKeyName string
-// param webAppDataProtectionKeyUri string
 
-param initialKeyVaultAdminObjectId string
+param initialManagedHsmAdminObjectId string
 
 param developerIpAddress string
 
 param managementVmAdminUsername string
 @secure()
 param managementVmAdminSshPublicKey string
+
+param entraIdAuthTenantDomain string
+param entraIdClientId string
+
+param limitedDeveloperUserObjectId string
 
 var suffix = uniqueString(resourceGroup().id)
 var naming = {
@@ -45,7 +49,7 @@ var naming = {
   firewallPip: 'pip-afw-${suffix}'
   firewallPolicy: 'afw-policy-${suffix}'
   hubVnet: 'vnet-hub-${suffix}'
-  keyVaultPrivateEndpoint: 'kv-pe-${suffix}'
+  managedHsmPrivateEndpoint: 'hsm-pe-${suffix}'
   logAnalytics: 'law-${suffix}'
   logAnalyticsPrivateEndpoint: 'law-pe-${suffix}'
   logAnalyticsPrivateLinkScope: 'law-pls-${suffix}'
@@ -59,7 +63,7 @@ var naming = {
   storageWebAppDataProtectionContainer: 'webappauth'
   wafPolicy: 'waf-policy-${suffix}'
   webApp: 'app-${suffix}'
-  webAppDataProtectionKeyVault: 'kv-app-dp-${suffix}'
+  webAppDataProtectionManagedHsm: 'hsm-app-dp-${suffix}'
   webAppPrivateEndpoint: 'app-pe-${suffix}'
 }
 
@@ -91,41 +95,25 @@ var appSubnets = {
     name: 'appServiceEnvironment'
     addressPrefix: '10.0.4.64/26'
   }
-  webAppInbound: {
-    name: 'webAppInbound'
-    addressPrefix: '10.0.4.128/26'
-  }
-  webAppOutbound: {
-    name: 'webAppOutbound'
-    addressPrefix: '10.0.4.192/26'
-  }
   sql: {
     name: 'sql'
-    addressPrefix: '10.0.5.0/26'
+    addressPrefix: '10.0.4.128/26'
   }
-  appServiceKeyVault: {
-    name: 'appServiceKeyVault'
-    addressPrefix: '10.0.5.64/26'
+  appServiceManagedHsm: {
+    name: 'appServiceManagedHsm'
+    addressPrefix: '10.0.4.192/26'
   }
   storage: {
     name: 'storage'
-    addressPrefix: '10.0.5.128/26'
-  }
-  sqlKeyVault: {
-    name: 'sqlKeyVault'
-    addressPrefix: '10.0.5.192/26'
-  }
-  storageKeyVault: {
-    name: 'storageKeyVault'
-    addressPrefix: '10.0.6.0/26'
+    addressPrefix: '10.0.5.0/26'
   }
   buildAgent: {
     name: 'buildAgent'
-    addressPrefix: '10.0.6.64/26'
+    addressPrefix: '10.0.5.64/26'
   }
   managementVm: {
     name: 'managementVm'
-    addressPrefix: '10.0.6.128/26'
+    addressPrefix: '10.0.5.128/26'
   }
 }
 var appGatewayPrivateIpAddress = '10.0.4.4'
@@ -246,18 +234,15 @@ module buildAgent 'modules/buildAgent.bicep' = {
   ]
 }
 
-module keyVault 'modules/keyVault.bicep' = {
-  name: '${deployment().name}-keyVault'
+module managedHsm 'modules/managedHsm.bicep' = {
+  name: '${deployment().name}-managedHsm'
   params: {
     location: location
     naming: naming
-    // keyVaultPrivateDnsZoneId: commonPrivateDns.outputs.keyVaultDnsZoneResourceId
     managedHsmPrivateDnsZoneId: commonPrivateDns.outputs.managedHsmDnsZoneResourceId
     privateEndpointVnetName: naming.appVnet
-    privateEndpointSubnetName: appSubnets.appServiceKeyVault.name
-    // webAppDataProtectionKeyUri: webAppDataProtectionKeyUri
-    // webAppDataProtectionKeyName: webAppDataProtectionKeyName
-    initialKeyVaultAdminObjectId: initialKeyVaultAdminObjectId
+    privateEndpointSubnetName: appSubnets.appServiceManagedHsm.name
+    initialAdminObjectId: initialManagedHsmAdminObjectId
   }
   dependsOn: [
     appVnet
@@ -304,20 +289,18 @@ module webApp 'modules/webApp.bicep' = {
     naming: naming
     appServiceEnvironmentResourceId: appServiceEnvironment.outputs.appServiceEnvironmentResourceId
     appServicePlanResourceId: appServicePlan.outputs.appServicePlanResourceId
-    // keyVaultResourceId: keyVault.outputs.webAppDataProtectionKeyVaultResourceId
     storageAccountResourceId: storageAccount.outputs.storageAccountResourceId
     storageWebAppDataProtectionContainerName: naming.storageWebAppDataProtectionContainer
     subnets: appSubnets
     appServiceEnvironmentDnsZoneResourceId: commonPrivateDns.outputs.appServiceEnvironmentDnsZoneResourceId
     appServiceEnvironmentIpAddress: appServiceEnvironment.outputs.appServiceEnvironmentIpAddress
-    // appVnetName: naming.appVnet
-    // appServiceDnsZoneResourceId: commonPrivateDns.outputs.appServiceDnsZoneResourceId
-    // dataProtectionKeyUri: keyVault.outputs.webAppDataProtectionKeyUri
     appInsightsConnectionString: monitor.outputs.appInsightsConnectionString
-    dataProtectionManagedHsmName: keyVault.outputs.webAppDataProtectionKeyVaultName
+    dataProtectionManagedHsmName: managedHsm.outputs.webAppDataProtectionManagedHsmName
     dataProtectionKeyName: webAppDataProtectionKeyName
     sqlServerFqdn: sql.outputs.sqlManagedInstanceFqdn
     sqlDatabaseName: sql.outputs.sqlDatabaseName
+    entraIdAuthTenantDomain: entraIdAuthTenantDomain
+    entraIdClientId: entraIdClientId
   }
 }
 
@@ -354,13 +337,20 @@ module managementVm 'modules/managementVm.bicep' = {
   ]
 }
 
+module customRoles 'modules/customRoles.bicep' = {
+  name: '${deployment().name}-customRoles'
+  params: {
+    limitedDeveloperUserObjectId: limitedDeveloperUserObjectId
+  }
+}
+
 output firewallPublicIpAddress string = firewall.outputs.firewallPublicIpAddress
 output sqlManagedInstanceIdentityObjectId string = sql.outputs.sqlManagedInstanceIdentityObjectId
 output managedDevopsPoolName string = buildAgent.outputs.managedDevopsPoolName
 output managedDevopsPoolIdentityObjectId string = buildAgent.outputs.managedDevopsPoolIdentityObjectId
 output webAppName string = webApp.outputs.webAppName
 output webAppIdentityObjectId string = webApp.outputs.webAppIdentityObjectId
-output webAppDataProtectionManagedHsmName string = keyVault.outputs.webAppDataProtectionKeyVaultName
+output webAppDataProtectionManagedHsmName string = managedHsm.outputs.webAppDataProtectionManagedHsmName
 output managementVmPublicIpAddress string = managementVm.outputs.managementVmPublicIpAddress
 output sqlServerFqdn string = sql.outputs.sqlManagedInstanceFqdn
 output sqlDatabaseName string = sql.outputs.sqlDatabaseName

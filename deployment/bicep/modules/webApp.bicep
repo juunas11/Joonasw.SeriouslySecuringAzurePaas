@@ -3,13 +3,9 @@ param naming object
 
 param appServiceEnvironmentResourceId string
 param appServicePlanResourceId string
-// param keyVaultResourceId string
 param storageAccountResourceId string
 param storageWebAppDataProtectionContainerName string
-// param appVnetName string
 param subnets object
-// param appServiceDnsZoneResourceId string
-// param dataProtectionKeyUri string
 param appInsightsConnectionString string
 param dataProtectionManagedHsmName string
 param dataProtectionKeyName string
@@ -17,13 +13,10 @@ param appServiceEnvironmentDnsZoneResourceId string
 param appServiceEnvironmentIpAddress string
 param sqlServerFqdn string
 param sqlDatabaseName string
+param entraIdAuthTenantDomain string
+param entraIdClientId string
 
-// var keyVaultName = last(split(keyVaultResourceId, '/'))
 var storageAccountName = last(split(storageAccountResourceId, '/'))
-
-// resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-//   name: keyVaultName
-// }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
@@ -63,7 +56,7 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           value: '${storageAccount.properties.primaryEndpoints.blob}${naming.storageWebAppDataProtectionContainer}/keys.xml'
         }
         {
-          name: 'DataProtection__KeyVaultKeyUri'
+          name: 'DataProtection__ManagedHsmKeyUri'
           value: 'https://${dataProtectionManagedHsmName}.managedhsm.azure.net/keys/${dataProtectionKeyName}'
         }
         {
@@ -72,25 +65,26 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'EntraId__Domain'
-          value: ''
+          value: entraIdAuthTenantDomain
         }
         {
           name: 'EntraId__TenantId'
-          value: ''
+          value: 'organizations'
         }
         {
           name: 'EntraId__ClientId'
-          value: ''
+          value: entraIdClientId
         }
-        // TODO: Entra settings (how do we configure "organizations" for the domain)
       ]
       alwaysOn: true
       ftpsState: 'Disabled'
       // Require TLS 1.3 for incoming connections
       // (TLS 1.2 would be enough for most cases)
       // (Do check your minimum cipher suite such that all of them support authenticated encryption and forward secrecy)
+      // Note this only applies for the connection between the App Service and App Gateway
       minTlsVersion: '1.3'
       remoteDebuggingEnabled: false
+      // This applies to connections between the App Service and the build agent
       scmMinTlsVersion: '1.3'
       ipSecurityRestrictionsDefaultAction: 'Deny'
       ipSecurityRestrictions: [
@@ -128,42 +122,6 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     type: 'SystemAssigned'
   }
 }
-
-// resource webAppPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-01-01' = {
-//   name: naming.webAppPrivateEndpoint
-//   location: location
-//   properties: {
-//     subnet: {
-//       id: resourceId('Microsoft.Network/virtualNetworks/subnets', appVnetName, subnets.webAppInbound.name)
-//     }
-//     privateLinkServiceConnections: [
-//       {
-//         name: '${naming.webApp}-privateLinkServiceConnection'
-//         properties: {
-//           privateLinkServiceId: webApp.id
-//           groupIds: [
-//             'sites'
-//           ]
-//         }
-//       }
-//     ]
-//   }
-// }
-
-// resource webAppPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-01-01' = {
-//   parent: webAppPrivateEndpoint
-//   name: 'PrivateEndpointPrivateDnsZoneGroup'
-//   properties: {
-//     privateDnsZoneConfigs: [
-//       {
-//         name: 'privatelink-azurewebsites-net'
-//         properties: {
-//           privateDnsZoneId: appServiceDnsZoneResourceId
-//         }
-//       }
-//     ]
-//   }
-// }
 
 module webAppDns './webAppDns.bicep' = {
   name: '${deployment().name}-webAppDns'

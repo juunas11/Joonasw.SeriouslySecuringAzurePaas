@@ -10,8 +10,11 @@
   "devCenterProjectName": "ssap-todo-app",
   "azureDevOpsOrganizationUrl": "https://dev.azure.com/yourorg",
   "azureDevOpsProjectName": "",
-  "initialKeyVaultAdminObjectId": "",
+  "initialManagedHsmAdminObjectId": "",
   "developerIpAddress": "",
   "managementVmAdminUsername": "",
-  "managementVmAdminSshPublicKeyFilePath": ""
+  "managementVmAdminSshPublicKeyFilePath": "",
+  "entraIdAuthTenantDomain": "",
+  "entraIdClientId": "",
+  "limitedDeveloperUserObjectId": ""
 }

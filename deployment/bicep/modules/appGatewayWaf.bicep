@@ -20,14 +20,20 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
       managedRuleSets: [
         {
           ruleSetType: 'OWASP'
-          ruleSetVersion: '3.1'
+          ruleSetVersion: '3.2'
+        }
+        {
+          ruleSetType: 'Microsoft_BotManagerRuleSet'
+          ruleSetVersion: '1.1'
         }
       ]
     }
     policySettings: {
       requestBodyCheck: true
       maxRequestBodySizeInKb: 128
+      requestBodyEnforcement: true
       fileUploadLimitInMb: 1
+      fileUploadEnforcement: true
       state: 'Enabled'
       mode: 'Prevention'
     }

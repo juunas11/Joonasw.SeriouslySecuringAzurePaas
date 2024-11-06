@@ -13,10 +13,14 @@ $devCenterName = $config.devCenterName
 $devCenterProjectName = $config.devCenterProjectName
 $azureDevOpsOrganizationUrl = $config.azureDevOpsOrganizationUrl
 $azureDevOpsProjectName = $config.azureDevOpsProjectName
-$initialKeyVaultAdminObjectId = $config.initialKeyVaultAdminObjectId
+$initialManagedHsmAdminObjectId = $config.initialManagedHsmAdminObjectId
 $developerIpAddress = $config.developerIpAddress
 $managementVmAdminUsername = $config.managementVmAdminUsername
 $managementVmAdminSshPublicKeyFilePath = $config.managementVmAdminSshPublicKeyFilePath
+$entraIdAuthTenantDomain = $config.entraIdAuthTenantDomain
+$entraIdClientId = $config.entraIdClientId
+$limitedDeveloperUserObjectId = $config.limitedDeveloperUserObjectId
+$webAppDataProtectionKeyName = "DataProtectionKeyEncryptionKey"
 
 # Get PFX as base 64 encoded string
 $certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $PSScriptRoot cert.pfx)))
@@ -31,8 +35,10 @@ if ($LASTEXITCODE -ne 0) {
     az login -t "$tenantId"
 }
 
-# TODO: Check if we already are logged in with correct scope
-Connect-MgGraph -TenantId "$tenantId" -Scopes "RoleManagement.ReadWrite.Directory" -NoWelcome
+$graphContext = Get-MgContext
+if ($graphContext.TenantId -ne $tenantId -or $graphContext.Scopes -notcontains "RoleManagement.ReadWrite.Directory") {
+    Connect-MgGraph -TenantId "$tenantId" -Scopes "RoleManagement.ReadWrite.Directory" -NoWelcome
+}
 
 # Ensure resource group exists
 $rgExists = az group exists --subscription "$subscriptionId" -g "$resourceGroup"
@@ -90,9 +96,6 @@ if ($null -eq $devOpsInfrastructureSpId) {
     throw "DevOpsInfrastructure service principal not found."
 }
 
-# Get Key Vault key URI if it exists (used for session cookie encryption key encryption)
-$keyVaultKeyName = "DataProtectionKeyEncryptionKey"
-
 # Deploy Bicep template
 
 Push-Location -Path (Join-Path $PSScriptRoot bicep)
@@ -122,12 +125,15 @@ $mainBicepResult = az deployment group create `
     -p azureDevOpsProjectName=$azureDevOpsProjectName `
     -p devCenterProjectResourceId=$devCenterProjectId `
     -p devOpsInfrastructureSpId=$devOpsInfrastructureSpId `
-    -p webAppDataProtectionKeyName=$keyVaultKeyName `
-    -p initialKeyVaultAdminObjectId=$initialKeyVaultAdminObjectId `
+    -p webAppDataProtectionKeyName=$webAppDataProtectionKeyName `
+    -p initialManagedHsmAdminObjectId=$initialManagedHsmAdminObjectId `
     -p developerIpAddress=$developerIpAddress `
     -p managementVmAdminUsername=$managementVmAdminUsername `
     -p managementVmAdminSshPublicKey=$managementVmAdminSshPublicKey `
-    -p appDomainName=$domainName | ConvertFrom-Json
+    -p appDomainName=$domainName `
+    -p entraIdAuthTenantDomain=$entraIdAuthTenantDomain `
+    -p entraIdClientId=$entraIdClientId `
+    -p limitedDeveloperUserObjectId=$limitedDeveloperUserObjectId | ConvertFrom-Json
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
@@ -148,26 +154,6 @@ $sqlServerFqdn = $mainBicepOutputs.sqlServerFqdn.value
 $sqlDatabaseName = $mainBicepOutputs.sqlDatabaseName.value
 
 Pop-Location
-
-# Assign Directory Readers role to SQL MI managed identity
-
-$directoryReadersRoleId = (Get-MgDirectoryRole -Filter "displayName eq 'Directory Readers'").Id
-if ($null -eq $directoryReadersRoleId) {
-    throw "Directory Readers role not found."
-}
-
-$directoryReadersRoleMember = Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryObjectId $sqlManagedInstanceIdentityObjectId -DirectoryRoleId $directoryReadersRoleId
-if ($null -ne $directoryReadersRoleMember) {
-    Write-Host "SQL MI managed identity is already a member of Directory Readers role."
-}
-else {
-    Write-Host "Adding SQL MI managed identity to Directory Readers role..."
-    $addRoleMemberBody = @{
-        "@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$sqlManagedInstanceIdentityObjectId"
-    }
-
-    New-MgDirectoryRoleMemberByRef -DirectoryRoleId $directoryReadersRoleId -BodyParameter $addRoleMemberBody
-}
 
 # Update build pipeline values
 
@@ -195,13 +181,35 @@ Write-Host "Build pipeline variables file updated."
 $managedHsmScript = Get-Content -Path (Join-Path $PSScriptRoot setup-managedhsm.sh) -Raw
 $managedHsmScript = $managedHsmScript -replace '(SUBSCRIPTION_ID=.*)', "SUBSCRIPTION_ID=$subscriptionId"
 $managedHsmScript = $managedHsmScript -replace '(HSM_NAME=.*)', "HSM_NAME=$webAppDataProtectionManagedHsmName"
-$managedHsmScript = $managedHsmScript -replace '(ADMIN_OBJECT_ID=.*)', "ADMIN_OBJECT_ID=$initialKeyVaultAdminObjectId"
+$managedHsmScript = $managedHsmScript -replace '(ADMIN_OBJECT_ID=.*)', "ADMIN_OBJECT_ID=$initialManagedHsmAdminObjectId"
 $managedHsmScript = $managedHsmScript -replace '(WEB_APP_OBJECT_ID=.*)', "WEB_APP_OBJECT_ID=$webAppIdentityObjectId"
-$managedHsmScript = $managedHsmScript -replace '(DATA_PROTECTION_KEY_NAME=.*)', "DATA_PROTECTION_KEY_NAME=$keyVaultKeyName"
+$managedHsmScript = $managedHsmScript -replace '(DATA_PROTECTION_KEY_NAME=.*)', "DATA_PROTECTION_KEY_NAME=$webAppDataProtectionKeyName"
 $managedHsmScript = $managedHsmScript -replace '(TENANT_ID=.*)', "TENANT_ID=$tenantId"
 
 Set-Content -Path (Join-Path $PSScriptRoot setup-managedhsm.sh) -Value $managedHsmScript
 
+# TODO: Update SQL setup script
+
+# Assign Directory Readers role to SQL MI managed identity
+
+$directoryReadersRoleId = (Get-MgDirectoryRole -Filter "displayName eq 'Directory Readers'").Id
+if ($null -eq $directoryReadersRoleId) {
+    throw "Directory Readers role not found."
+}
+
+$directoryReadersRoleMember = Get-MgDirectoryRoleMemberAsServicePrincipal -DirectoryObjectId $sqlManagedInstanceIdentityObjectId -DirectoryRoleId $directoryReadersRoleId
+if ($null -ne $directoryReadersRoleMember) {
+    Write-Host "SQL MI managed identity is already a member of Directory Readers role."
+}
+else {
+    Write-Host "Adding SQL MI managed identity to Directory Readers role..."
+    $addRoleMemberBody = @{
+        "@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$sqlManagedInstanceIdentityObjectId"
+    }
+
+    New-MgDirectoryRoleMemberByRef -DirectoryRoleId $directoryReadersRoleId -BodyParameter $addRoleMemberBody
+}
+
 Write-Host "Deployment complete."
 Write-Host "You need to now set up a DNS A record: $domainName -> $firewallPublicIpAddress"
-Write-Host "Connect with SSH to management VM. Username: $managementVmAdminUsername, IP: $managementVmPublicIpAddress"
+Write-Host "Connect with SSH to management VM to setup HSM and set SQL permissions. Username: $managementVmAdminUsername, IP: $managementVmPublicIpAddress"

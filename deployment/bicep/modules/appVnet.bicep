@@ -59,6 +59,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
   location: location
   properties: {
     securityRules: [
+      // TODO: Fix issues with NSG / Route table so they can be re-enabled
       // {
       //   name: 'AllowAppGatewayHttpsInbound'
       //   properties: {
@@ -128,7 +129,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
         }
       }
       {
-        name: 'AllowKeyVaultHttpsOutbound'
+        name: 'AllowManagedHsmHttpsOutbound'
         properties: {
           priority: 300
           direction: 'Outbound'
@@ -136,108 +137,7 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
           protocol: 'Tcp'
           sourceAddressPrefix: '*'
           sourcePortRange: '*'
-          destinationAddressPrefix: subnets.appServiceKeyVault.addressPrefix
-          destinationPortRange: '443'
-        }
-      }
-      {
-        name: 'AllowStorageHttpsOutbound'
-        properties: {
-          priority: 400
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: subnets.storage.addressPrefix
-          destinationPortRange: '443'
-        }
-      }
-      denyAllOutboundRule
-    ]
-  }
-}
-
-resource webAppInboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-app-${subnets.webAppInbound.name}'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'AllowAppGatewayHttpsInbound'
-        properties: {
-          priority: 100
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: subnets.appGateway.addressPrefix
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '443'
-        }
-      }
-      {
-        name: 'AllowBuildAgentHttpsInbound'
-        properties: {
-          priority: 200
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: subnets.buildAgent.addressPrefix
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '443'
-        }
-      }
-      allowManagementVmInboundRule
-      denyAllInboundRule
-      denyAllOutboundRule
-    ]
-  }
-}
-
-resource webAppOutboundNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-app-${subnets.webAppOutbound.name}'
-  location: location
-  properties: {
-    securityRules: [
-      denyAllInboundRule
-      {
-        name: 'AllowMonitorHttpsOutbound'
-        properties: {
-          priority: 100
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: hubSubnets.monitor.addressPrefix
-          destinationPortRange: '443'
-        }
-      }
-      {
-        name: 'AllowSqlTdsOutbound'
-        properties: {
-          priority: 200
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: subnets.sql.addressPrefix
-          destinationPortRange: '1433'
-        }
-      }
-      {
-        name: 'AllowKeyVaultHttpsOutbound'
-        properties: {
-          priority: 300
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: subnets.appServiceKeyVault.addressPrefix
+          destinationAddressPrefix: subnets.appServiceManagedHsm.addressPrefix
           destinationPortRange: '443'
         }
       }
@@ -388,8 +288,8 @@ resource createdSqlNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = if
   }
 }
 
-resource appServiceKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-app-${subnets.appServiceKeyVault.name}'
+resource appServiceManagedHsmNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
+  name: 'nsg-app-${subnets.appServiceManagedHsm.name}'
   location: location
   properties: {
     securityRules: [
@@ -409,20 +309,6 @@ resource appServiceKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-
       allowManagementVmInboundRule
       denyAllInboundRule
       denyAllOutboundRule
-      // TODO: Let's see if this is needed
-      // {
-      //   name: 'AllowBuildAgentHttpsInbound'
-      //   properties: {
-      //     priority: 200
-      //     direction: 'Inbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: subnets.buildAgent.addressPrefix
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: '*'
-      //     destinationPortRange: '443'
-      //   }
-      // }
     ]
   }
 }
@@ -440,71 +326,6 @@ resource storageNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           access: 'Allow'
           protocol: 'Tcp'
           sourceAddressPrefix: subnets.appServiceEnvironment.addressPrefix
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '443'
-        }
-      }
-      allowManagementVmInboundRule
-      denyAllInboundRule
-      denyAllOutboundRule
-      // TODO: Let's see if this is needed
-      // {
-      //   name: 'AllowBuildAgentHttpsInbound'
-      //   properties: {
-      //     priority: 200
-      //     direction: 'Inbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: subnets.buildAgent.addressPrefix
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: '*'
-      //     destinationPortRange: '443'
-      //   }
-      // }
-    ]
-  }
-}
-
-resource sqlKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-app-${subnets.sqlKeyVault.name}'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'AllowSqlHttpsInbound'
-        properties: {
-          priority: 100
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: subnets.sql.addressPrefix
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '443'
-        }
-      }
-      allowManagementVmInboundRule
-      denyAllInboundRule
-      denyAllOutboundRule
-      // TODO: Build agent?
-    ]
-  }
-}
-
-resource storageKeyVaultNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-app-${subnets.storageKeyVault.name}'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'AllowStorageHttpsInbound'
-        properties: {
-          priority: 100
-          direction: 'Inbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: subnets.storage.addressPrefix
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '443'
@@ -575,7 +396,7 @@ resource buildAgentNsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           destinationPortRange: '*'
         }
       }
-      // Allow traffic destined out of the VNET
+      // Allow traffic destined out of the VNET, no deny all
     ]
   }
 }
@@ -670,6 +491,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
         name: subnets.appServiceEnvironment.name
         properties: {
           addressPrefix: subnets.appServiceEnvironment.addressPrefix
+          // TODO: Re-enable
           // networkSecurityGroup: {
           //   id: appServiceEnvironmentNsg.id
           // }
@@ -681,38 +503,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
               name: 'Microsoft.Web/hostingEnvironments'
               properties: {
                 serviceName: 'Microsoft.Web/hostingEnvironments'
-              }
-            }
-          ]
-        }
-      }
-      {
-        name: subnets.webAppInbound.name
-        properties: {
-          addressPrefix: subnets.webAppInbound.addressPrefix
-          networkSecurityGroup: {
-            id: webAppInboundNsg.id
-          }
-          routeTable: {
-            id: routeTable.id
-          }
-        }
-      }
-      {
-        name: subnets.webAppOutbound.name
-        properties: {
-          addressPrefix: subnets.webAppOutbound.addressPrefix
-          networkSecurityGroup: {
-            id: webAppOutboundNsg.id
-          }
-          routeTable: {
-            id: routeTable.id
-          }
-          delegations: [
-            {
-              name: 'Microsoft.Web/serverFarms'
-              properties: {
-                serviceName: 'Microsoft.Web/serverFarms'
               }
             }
           ]
@@ -751,11 +541,11 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
         }
       }
       {
-        name: subnets.appServiceKeyVault.name
+        name: subnets.appServiceManagedHsm.name
         properties: {
-          addressPrefix: subnets.appServiceKeyVault.addressPrefix
+          addressPrefix: subnets.appServiceManagedHsm.addressPrefix
           networkSecurityGroup: {
-            id: appServiceKeyVaultNsg.id
+            id: appServiceManagedHsmNsg.id
           }
           routeTable: {
             id: routeTable.id
@@ -768,30 +558,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.storage.addressPrefix
           networkSecurityGroup: {
             id: storageNsg.id
-          }
-          routeTable: {
-            id: routeTable.id
-          }
-        }
-      }
-      {
-        name: subnets.sqlKeyVault.name
-        properties: {
-          addressPrefix: subnets.sqlKeyVault.addressPrefix
-          networkSecurityGroup: {
-            id: sqlKeyVaultNsg.id
-          }
-          routeTable: {
-            id: routeTable.id
-          }
-        }
-      }
-      {
-        name: subnets.storageKeyVault.name
-        properties: {
-          addressPrefix: subnets.storageKeyVault.addressPrefix
-          networkSecurityGroup: {
-            id: storageKeyVaultNsg.id
           }
           routeTable: {
             id: routeTable.id

@@ -75,9 +75,9 @@ public class Program
             // This way you can only get the keys if you have access
             // to both the storage account and the key vault.
             var dataProtectionStorabeBlobUri = builder.Configuration["DataProtection:StorageBlobUri"];
-            var dataProtectionKeyVaultKeyUri = builder.Configuration["DataProtection:KeyVaultKeyUri"];
+            var dataProtectionManagedHsmKeyUri = builder.Configuration["DataProtection:ManagedHsmKeyUri"];
             if (!string.IsNullOrEmpty(dataProtectionStorabeBlobUri)
-                && !string.IsNullOrEmpty(dataProtectionKeyVaultKeyUri))
+                && !string.IsNullOrEmpty(dataProtectionManagedHsmKeyUri))
             {
                 TokenCredential tokenCredential = builder.Environment.IsDevelopment()
                     ? new AzureCliCredential(new AzureCliCredentialOptions
@@ -87,7 +87,7 @@ public class Program
                     : new ManagedIdentityCredential();
                 builder.Services.AddDataProtection()
                     .PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["DataProtection:StorageBlobUri"]!), tokenCredential)
-                    .ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["DataProtection:KeyVaultKeyUri"]!), tokenCredential);
+                    .ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["DataProtection:ManagedHsmKeyUri"]!), tokenCredential);
             }
 
             if (!builder.Environment.IsDevelopment())

@@ -24,7 +24,7 @@ resource developerProductionRole 'Microsoft.Authorization/roleDefinitions@2022-0
       }
     ]
     assignableScopes: [
-      '/subscriptions/${subscription().subscriptionId}'
+      '/subscriptions/${subscription().subscriptionId}/resourceGroups/${resourceGroup().name}'
     ]
   }
 }

@@ -1,7 +1,9 @@
-DEVOPS_POOL_IDENTITY_NAME="devops-pool-identity-ppujjp5a5djlw"
-WEB_APP_NAME="app-ppujjp5a5djlw"
-SQL_SERVER_FQDN="sql-ppujjp5a5djlw.6112adfc1e77.database.windows.net"
-SQL_DATABASE_NAME="sqldbppujjp5a5djlw"
+#!/bin/bash
+
+DEVOPS_POOL_IDENTITY_NAME="devops-pool-identity-pss5etgafqg6w"
+WEB_APP_NAME="app-pss5etgafqg6w"
+SQL_SERVER_FQDN="sql-pss5etgafqg6w.ce1a7d1c8df4.database.windows.net"
+SQL_DATABASE_NAME="sqldbpss5etgafqg6w"
 
 curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
 
@@ -13,6 +15,7 @@ sudo apt-get install sqlcmd
 
 echo "SQLCMD installed"
 
+# TODO: Could we reduce these permissions?
 SQL="
 CREATE USER [$DEVOPS_POOL_IDENTITY_NAME] FROM EXTERNAL PROVIDER;
 ALTER ROLE db_ddladmin ADD MEMBER [$DEVOPS_POOL_IDENTITY_NAME];

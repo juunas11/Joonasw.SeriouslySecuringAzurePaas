@@ -1,9 +1,9 @@
 #!/bin/bash
 
 SUBSCRIPTION_ID=f532ecab-6efb-4f51-8848-b7a7e9ab4d6d
-HSM_NAME=kv-app-dp-ppujjp5a5djlw
+HSM_NAME=hsm-app-dp-pss5etgafqg6w
 ADMIN_OBJECT_ID=91a51582-c163-4491-a9da-1b76fbcb906b
-WEB_APP_OBJECT_ID=baab061f-978a-47df-8b89-6d4931a5f4ff
+WEB_APP_OBJECT_ID=ce6ce84f-65d8-414d-8ca3-fd22420faae5
 DATA_PROTECTION_KEY_NAME=DataProtectionKeyEncryptionKey
 TENANT_ID=0d7e0754-812c-4a0f-883f-5f34cf78d354
 
@@ -48,4 +48,3 @@ echo "Data protection key created"
 az keyvault role assignment create --hsm-name "$HSM_NAME" --role 'Managed HSM Crypto Service Encryption User' --scope "/keys/$DATA_PROTECTION_KEY_NAME" --assignee-object-id "$WEB_APP_OBJECT_ID" --assignee-principal-type ServicePrincipal -n "$WEB_APP_ROLE_ASSIGNMENT_ID"
 
 echo "Role assigned to web app"
-
