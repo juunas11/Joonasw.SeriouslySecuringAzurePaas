@@ -1,11 +1,14 @@
 using Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data;
 using Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 
 namespace Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web.Pages;
+
+[AllowAnonymous]
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
@@ -20,9 +23,15 @@ public class IndexModel : PageModel
     }
 
     public List<TodoItem> TodoItems { get; set; } = new();
+    public bool IsAuthenticated => User.Identity?.IsAuthenticated ?? false;
 
     public async Task OnGetAsync()
     {
+        if (!IsAuthenticated)
+        {
+            return;
+        }
+
         var (tenantId, userId) = GetTenantAndUserId();
 
         TodoItems = await _context.TodoItems
@@ -33,6 +42,11 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostAddTodoAsync(string? newTodoText)
     {
+        if (!IsAuthenticated)
+        {
+            return RedirectToPage();
+        }
+
         if (string.IsNullOrWhiteSpace(newTodoText))
         {
             return RedirectToPage();
@@ -56,6 +70,11 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostCompleteTodoAsync(Guid id)
     {
+        if (!IsAuthenticated)
+        {
+            return RedirectToPage();
+        }
+
         var (tenantId, userId) = GetTenantAndUserId();
 
         var todo = await _context.TodoItems
@@ -75,6 +94,11 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteTodoAsync(Guid id)
     {
+        if (!IsAuthenticated)
+        {
+            return RedirectToPage();
+        }
+
         var (tenantId, userId) = GetTenantAndUserId();
 
         var rowsDeleted = await _context.TodoItems

@@ -5,50 +5,57 @@
 }
 
 <div>
-    <h2>Create todo</h2>
-    <form id="completeForm" method="post" asp-page-handler="CompleteTodo">
-        <input type="hidden" id="completeId" name="id" />
-    </form>
-    <form id="deleteForm" method="post" asp-page-handler="DeleteTodo">
-        <input type="hidden" id="deleteId" name="id" />
-    </form>
-    <form class="mb-3" method="post" asp-page-handler="AddTodo">
-        <input type="text" class="form-control" id="newTodoText" name="newTodoText" />
-        <button type="submit" class="btn btn-primary mt-2">Create</button>
-    </form>
-    <h3>Todos</h3>
-    <table class="table table-bordered table-striped" style="width: 100%">
-        <thead>
-            <tr>
-                <th>Text</th>
-                <th>Is done</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model.TodoItems.Count == 0)
-            {
+    @if (!Model.IsAuthenticated)
+    {
+        <h2>Hello, please sign in</h2>
+    }
+    else
+    {
+        <h2>Create todo</h2>
+        <form id="completeForm" method="post" asp-page-handler="CompleteTodo">
+            <input type="hidden" id="completeId" name="id" />
+        </form>
+        <form id="deleteForm" method="post" asp-page-handler="DeleteTodo">
+            <input type="hidden" id="deleteId" name="id" />
+        </form>
+        <form class="mb-3" method="post" asp-page-handler="AddTodo">
+            <input type="text" class="form-control" id="newTodoText" name="newTodoText" />
+            <button type="submit" class="btn btn-primary mt-2">Create</button>
+        </form>
+        <h3>Todos</h3>
+        <table class="table table-bordered table-striped" style="width: 100%">
+            <thead>
                 <tr>
-                    <td colspan="3">No todos</td>
+                    <th>Text</th>
+                    <th>Is done</th>
+                    <th>Actions</th>
                 </tr>
-            }
-            else
-            {
-                @foreach (var todo in Model.TodoItems)
+            </thead>
+            <tbody>
+                @if (Model.TodoItems.Count == 0)
                 {
                     <tr>
-                        <td>@todo.Text</td>
-                        <td>@todo.IsDone</td>
-                        <td>
-                            @if (!todo.IsDone)
-                            {
-                                <button class="btn btn-success btn-complete-todo" data-id="@todo.Id">Complete</button>
-                            }
-                            <button class="btn btn-danger btn-delete-todo" data-id="@todo.Id">Delete</button>
-                        </td>
+                        <td colspan="3">No todos</td>
                     </tr>
                 }
-            }
-        </tbody>
-    </table>
+                else
+                {
+                    @foreach (var todo in Model.TodoItems)
+                    {
+                        <tr>
+                            <td>@todo.Text</td>
+                            <td>@todo.IsDone</td>
+                            <td>
+                                @if (!todo.IsDone)
+                                {
+                                    <button class="btn btn-success btn-complete-todo" data-id="@todo.Id">Complete</button>
+                                }
+                                <button class="btn btn-danger btn-delete-todo" data-id="@todo.Id">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
 </div>

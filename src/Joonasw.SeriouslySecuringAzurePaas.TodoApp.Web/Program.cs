@@ -30,7 +30,6 @@ public class Program
 
         try
         {
-            // TODO: Fix 403 from AGW on sign out
             // TODO: Add other security headers (A+ on Mozilla Observatory)
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApp(
