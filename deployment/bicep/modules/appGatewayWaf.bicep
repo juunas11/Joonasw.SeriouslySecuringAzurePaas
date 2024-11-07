@@ -21,11 +21,60 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
         {
           ruleSetType: 'OWASP'
           ruleSetVersion: '3.2'
-          // TODO: Add exclusion for .AspNetCore.Cookies and the anti-forgery cookie at least for SQL comment
         }
         {
           ruleSetType: 'Microsoft_BotManagerRuleSet'
           ruleSetVersion: '1.1'
+        }
+      ]
+      exclusions: [
+        // TODO: Test these work
+        // Exclude the two cookies' values from SQL comment checks (they can contain double dashes, causing random blocks)
+        {
+          matchVariable: 'RequestCookieValues'
+          selector: '.AspNetCore.Cookies'
+          selectorMatchOperator: 'StartsWith'
+          exclusionManagedRuleSets: [
+            {
+              ruleSetType: 'OWASP'
+              ruleSetVersion: '3.2'
+              ruleGroups: [
+                {
+                  ruleGroupName: 'REQUEST-942-APPLICATION-ATTACK-SQLI'
+                  rules: [
+                    {
+                      // SQL Comment Sequence Detected
+                      ruleId: '942440'
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+
+        {
+          matchVariable: 'RequestCookieValues'
+          // TODO: Check this name is correct / should we use equals
+          selector: '.AspNetCore.Antiforgery'
+          selectorMatchOperator: 'StartsWith'
+          exclusionManagedRuleSets: [
+            {
+              ruleSetType: 'OWASP'
+              ruleSetVersion: '3.2'
+              ruleGroups: [
+                {
+                  ruleGroupName: 'REQUEST-942-APPLICATION-ATTACK-SQLI'
+                  rules: [
+                    {
+                      // SQL Comment Sequence Detected
+                      ruleId: '942440'
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     }
@@ -295,6 +344,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
       // (Do check the ciphers support authenticated encryption and forward secrecy though)
       policyType: 'Predefined'
       policyName: 'AppGwSslPolicy20220101S'
+      // TODO: Try this again, need to know what the right params are
       // policyType: 'CustomV2'
       // minProtocolVersion: 'TLSv1_3'
       // cipherSuites: [
