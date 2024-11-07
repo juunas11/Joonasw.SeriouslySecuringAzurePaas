@@ -4,8 +4,8 @@ param naming object
 param firewallSubnetResourceId string
 param firewallManagementSubnetResourceId string
 param appGatewayPrivateIpAddress string
-param hubSubnets object
 param appSubnets object
+param allVnetsAddressSpace string
 
 resource firewallPip 'Microsoft.Network/publicIPAddresses@2024-01-01' = {
   name: naming.firewallPip
@@ -139,54 +139,14 @@ resource buildAgentRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollec
   }
 }
 
-resource allowToMonitorRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
+resource allowNtpRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
   parent: firewallPolicy
-  name: 'allow-to-monitor-collection'
+  name: 'allow-ntp-collection'
   dependsOn: [
     buildAgentRuleCollection
   ]
   properties: {
     priority: 300
-    ruleCollections: [
-      {
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        priority: 100
-        name: 'Allow to Azure Monitor'
-        action: {
-          type: 'Allow'
-        }
-        rules: [
-          {
-            ruleType: 'NetworkRule'
-            name: 'Allow to Azure Monitor from within the network'
-            destinationAddresses: [
-              hubSubnets.monitor.addressPrefix
-            ]
-            destinationPorts: [
-              '80'
-              '443'
-            ]
-            sourceAddresses: [
-              '10.0.0.0/8'
-            ]
-            ipProtocols: [
-              'TCP'
-            ]
-          }
-        ]
-      }
-    ]
-  }
-}
-
-resource allowNtpRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
-  parent: firewallPolicy
-  name: 'allow-ntp-collection'
-  dependsOn: [
-    allowToMonitorRuleCollection
-  ]
-  properties: {
-    priority: 400
     ruleCollections: [
       {
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
@@ -206,7 +166,7 @@ resource allowNtpRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollecti
               '123'
             ]
             sourceAddresses: [
-              '10.0.0.0/8'
+              allVnetsAddressSpace
             ]
             ipProtocols: [
               'UDP'
@@ -257,7 +217,6 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
   dependsOn: [
     buildAgentRuleCollection
     dnatAppRuleCollection
-    allowToMonitorRuleCollection
     allowNtpRuleCollection
   ]
 }

@@ -22,6 +22,22 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
         {
           ruleSetType: 'OWASP'
           ruleSetVersion: '3.2'
+          ruleGroupOverrides: [
+            {
+              // TODO: Test this
+              ruleGroupName: 'REQUEST-920-PROTOCOL-ENFORCEMENT'
+              rules: [
+                {
+                  // Host header is a numeric IP address
+                  ruleId: '920350'
+                  // Default action is Anomaly score
+                  // I would like to block them as the app doesn't work correctly
+                  action: 'Block'
+                  state: 'Enabled'
+                }
+              ]
+            }
+          ]
         }
         {
           ruleSetType: 'Microsoft_BotManagerRuleSet'
@@ -29,7 +45,6 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
         }
       ]
       exclusions: [
-        // TODO: Test these work
         // Exclude the two cookies' values from SQL comment checks (they can contain double dashes, causing random blocks)
         {
           matchVariable: 'RequestCookieValues'
@@ -56,7 +71,6 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
 
         {
           matchVariable: 'RequestCookieValues'
-          // TODO: Check this name is correct / should we use equals
           selector: '.AspNetCore.Antiforgery'
           selectorMatchOperator: 'StartsWith'
           exclusionManagedRuleSets: [
@@ -343,26 +357,23 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
       // Require TLS 1.3
       // (Using a predefined policy that requires 1.2+ would be enough for most cases)
       // (Do check the ciphers support authenticated encryption and forward secrecy though)
-      policyType: 'Predefined'
-      policyName: 'AppGwSslPolicy20220101S'
-      // TODO: Try this again, need to know what the right params are
-      // policyType: 'CustomV2'
-      // minProtocolVersion: 'TLSv1_3'
-      // cipherSuites: [
-      //   'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256'
-      //   'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384'
-      // ]
+      policyType: 'CustomV2'
+      minProtocolVersion: 'TLSv1_3'
+      cipherSuites: [
+        'TLS_AES_128_GCM_SHA256'
+        'TLS_AES_256_GCM_SHA384'
+      ]
     }
   }
 }
 
 resource wafDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'waflogs-to-loganalytics'
+  name: 'waf-logs-to-loganalytics'
   scope: appGateway
   properties: {
     logs: [
       {
-        category: 'Application Gateway Firewall Log'
+        category: 'ApplicationGatewayFirewallLog'
         enabled: true
       }
     ]

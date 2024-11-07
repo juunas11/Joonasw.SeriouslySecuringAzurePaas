@@ -36,6 +36,8 @@ public class Program
                     msIdOptions =>
                     {
                         builder.Configuration.GetSection("EntraId").Bind(msIdOptions);
+
+                        msIdOptions.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
                     },
                     cookieOptions =>
                     {
@@ -91,24 +93,6 @@ public class Program
                     .ProtectKeysWithAzureKeyVault(new Uri(builder.Configuration["DataProtection:ManagedHsmKeyUri"]!), tokenCredential);
             }
 
-            if (!builder.Environment.IsDevelopment())
-            {
-                builder.Services.AddHsts(options =>
-                {
-                    // How long browsers should cache the HSTS policy.
-                    // They will automatically use HTTPS for the duration of this time.
-                    options.MaxAge = TimeSpan.FromDays(365);
-
-                    // In a production scenario, you might want to preload HSTS.
-                    // _Be careful though, since you can't then use HTTP for any subdomains._
-                    // See MDN for more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security#preloading_strict_transport_security
-                    options.Preload = false;
-
-                    // This would need to be true for preload.
-                    options.IncludeSubDomains = false;
-                });
-            }
-
             builder.Services.AddApplicationInsightsTelemetry();
 
             var app = builder.Build();
@@ -119,6 +103,14 @@ public class Program
                 app.UseExceptionHandler("/Error");
             }
 
+            app.Use(async (context, next) =>
+            {
+                // Disable all of those features in the client
+                // These are all non-experimental ones from MDN: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy
+                context.Response.Headers.Append("Permissions-Policy", "camera=(), display-capture=(), fullscreen=(), geolocation=(), microphone=(), publickey-credentials-get=(), screen-wake-lock=(), web-share=()");
+
+                await next(context);
+            });
             app.UseSecureHeadersMiddleware(BuildSecurityHeadersConfig(app.Environment));
 
             app.UseHttpsRedirection();
@@ -161,7 +153,7 @@ public class Program
             .UseContentDefaultSecurityPolicy()
             .UsePermittedCrossDomainPolicies()
             .UseReferrerPolicy()
-            .UseCacheControl()
+            .UseCacheControl(noCache: true, noStore: true)
             .RemovePoweredByHeader()
             .UseXssProtection()
             .UseCrossOriginResourcePolicy();

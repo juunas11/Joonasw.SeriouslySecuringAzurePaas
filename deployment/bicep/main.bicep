@@ -67,6 +67,7 @@ var naming = {
   webAppPrivateEndpoint: 'app-pe-${suffix}'
 }
 
+var allVnetsAddressSpace = '10.0.0.0/8'
 var vnetAddressSpaces = {
   hub: '10.0.0.0/22' // 10.0.0.0 - 10.0.3.255
   app: '10.0.4.0/22' // 10.0.4.0 - 10.0.7.255
@@ -125,6 +126,7 @@ module hubVnet 'modules/hubVnet.bicep' = {
     naming: naming
     addressSpace: vnetAddressSpaces.hub
     subnets: hubSubnets
+    allVnetsAddressSpace: allVnetsAddressSpace
     // appVnetAddressSpace: vnetAddressSpaces.app
   }
 }
@@ -137,8 +139,8 @@ module firewall 'modules/firewall.bicep' = {
     firewallSubnetResourceId: hubVnet.outputs.firewallSubnetResourceId
     firewallManagementSubnetResourceId: hubVnet.outputs.firewallManagementSubnetResourceId
     appGatewayPrivateIpAddress: appGatewayPrivateIpAddress
-    hubSubnets: hubSubnets
     appSubnets: appSubnets
+    allVnetsAddressSpace: allVnetsAddressSpace
   }
 }
 
