@@ -626,3 +626,4 @@ resource devOpsInfrastructureNetworkContibutorRoleAssignment 'Microsoft.Authoriz
 }
 
 output vnetResourceId string = vnet.id
+output appServiceEnvironmentNsgResourceId string = appServiceEnvironmentNsg.id

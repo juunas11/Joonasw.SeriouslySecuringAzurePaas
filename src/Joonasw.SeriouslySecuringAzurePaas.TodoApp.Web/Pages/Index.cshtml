@@ -40,7 +40,10 @@
                         <td>@todo.Text</td>
                         <td>@todo.IsDone</td>
                         <td>
-                            <button class="btn btn-success" onclick="complete('@todo.Id')">Complete</button>
+                            @if (!todo.IsDone)
+                            {
+                                <button class="btn btn-success" onclick="complete('@todo.Id')">Complete</button>
+                            }
                             <button class="btn btn-danger" onclick="deleteTodo('@todo.Id')">Delete</button>
                         </td>
                     </tr>

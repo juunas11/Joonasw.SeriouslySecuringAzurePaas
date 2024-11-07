@@ -159,6 +159,14 @@ module appVnet 'modules/appVnet.bicep' = {
   }
 }
 
+module aseNsgDiagnostics 'modules/nsgDiagnostics.bicep' = {
+  name: '${deployment().name}-aseNsgDiagnostics'
+  params: {
+    logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
+    nsgResourceId: appVnet.outputs.appServiceEnvironmentNsgResourceId
+  }
+}
+
 module appHubPeering 'modules/vnetPeering.bicep' = {
   name: '${deployment().name}-appHubPeering'
   params: {
@@ -270,6 +278,7 @@ module appServiceEnvironment 'modules/appServiceEnvironment.bicep' = {
   }
   dependsOn: [
     appVnet
+    aseNsgDiagnostics
   ]
 }
 
@@ -316,6 +325,7 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
     certificatePassword: appGatewayCertificatePassword
     webAppFqdn: webApp.outputs.webAppFqdn
     appDomainName: appDomainName
+    logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
   }
   dependsOn: [
     appVnet
