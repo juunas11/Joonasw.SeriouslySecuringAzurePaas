@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
+using OwaspHeaders.Core.Extensions;
+using OwaspHeaders.Core.Models;
 
 namespace Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web;
 public class Program
@@ -116,11 +118,12 @@ public class Program
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
             }
 
+            app.UseSecureHeadersMiddleware(BuildSecurityHeadersConfig(app.Environment));
+
             app.UseHttpsRedirection();
+
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -139,5 +142,31 @@ public class Program
             telemetryClient?.Flush();
             throw;
         }
+    }
+
+    private static SecureHeadersMiddlewareConfiguration BuildSecurityHeadersConfig(
+        IWebHostEnvironment env)
+    {
+        var builder = SecureHeadersMiddlewareBuilder.CreateBuilder();
+
+        if (!env.IsDevelopment())
+        {
+            // We don't want HSTS for localhost
+            // I've also chosen not to include subdomains (though you should definitely consider doing it)
+            builder.UseHsts(includeSubDomains: false);
+        }
+
+        builder
+            .UseXFrameOptions()
+            .UseContentTypeOptions()
+            .UseContentDefaultSecurityPolicy()
+            .UsePermittedCrossDomainPolicies()
+            .UseReferrerPolicy()
+            .UseCacheControl()
+            .RemovePoweredByHeader()
+            .UseXssProtection()
+            .UseCrossOriginResourcePolicy();
+
+        return builder.Build();
     }
 }

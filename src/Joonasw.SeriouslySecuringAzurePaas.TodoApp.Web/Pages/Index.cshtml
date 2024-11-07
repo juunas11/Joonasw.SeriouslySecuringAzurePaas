@@ -42,9 +42,9 @@
                         <td>
                             @if (!todo.IsDone)
                             {
-                                <button class="btn btn-success" onclick="complete('@todo.Id')">Complete</button>
+                                <button class="btn btn-success btn-complete-todo" data-id="@todo.Id">Complete</button>
                             }
-                            <button class="btn btn-danger" onclick="deleteTodo('@todo.Id')">Delete</button>
+                            <button class="btn btn-danger btn-delete-todo" data-id="@todo.Id">Delete</button>
                         </td>
                     </tr>
                 }
@@ -52,17 +52,3 @@
         </tbody>
     </table>
 </div>
-
-@section Scripts {
-    <script>
-        function complete(id) {
-            document.getElementById("completeId").value = id;
-            document.getElementById("completeForm").submit();
-        }
-
-        function deleteTodo(id) {
-            document.getElementById("deleteId").value = id;
-            document.getElementById("deleteForm").submit();
-        }
-    </script>
-}
