@@ -97,9 +97,10 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
           addressPrefix: subnets.monitor.addressPrefix
           privateEndpointNetworkPolicies: 'Enabled'
           privateLinkServiceNetworkPolicies: 'Enabled'
-          networkSecurityGroup: {
-            id: monitorNsg.id
-          }
+          // TODO: Re-enable
+          // networkSecurityGroup: {
+          //   id: monitorNsg.id
+          // }
         }
       }
     ]

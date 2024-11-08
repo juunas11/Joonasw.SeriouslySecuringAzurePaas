@@ -178,6 +178,46 @@ resource allowNtpRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollecti
   }
 }
 
+resource appServiceEnvironmentRuleCollection 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-01-01' = {
+  parent: firewallPolicy
+  name: 'app-service-environment-outbound-collection'
+  dependsOn: [
+    allowNtpRuleCollection
+  ]
+  properties: {
+    priority: 400
+    ruleCollections: [
+      {
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        priority: 100
+        name: 'Allow App Service Environment outbound'
+        action: {
+          type: 'Allow'
+        }
+        rules: [
+          {
+            ruleType: 'NetworkRule'
+            name: 'Allow App Service Environment outbound'
+            sourceAddresses: [
+              appSubnets.appServiceEnvironment.addressPrefix
+            ]
+            destinationAddresses: [
+              '*'
+            ]
+            destinationPorts: [
+              '80'
+              '443'
+            ]
+            ipProtocols: [
+              'TCP'
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
 resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
   name: naming.firewall
   location: location
@@ -218,6 +258,7 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-01-01' = {
     buildAgentRuleCollection
     dnatAppRuleCollection
     allowNtpRuleCollection
+    appServiceEnvironmentRuleCollection
   ]
 }
 

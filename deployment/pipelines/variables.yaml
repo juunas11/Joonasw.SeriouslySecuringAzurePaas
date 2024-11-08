@@ -1,11 +1,11 @@
 variables:
   - name: SqlServer
-    value: "sql-ykqaksesv6pz4.005d6499e066.database.windows.net"
+    value: "sql-sta2mwuuor22u.7d136ca31c3f.database.windows.net"
   - name: SqlDatabase
-    value: "sqldbykqaksesv6pz4"
+    value: "sqldbsta2mwuuor22u"
   - name: WebApp
-    value: "app-ykqaksesv6pz4"
+    value: "app-sta2mwuuor22u"
   - name: ResourceGroup
-    value: "rg-securitypocs20241107"
+    value: "rg-securitypocs20241108"
   - name: ManagedIdentityObjectId
-    value: "98c4299d-cddc-45e8-9d58-ef1c025ad337"
+    value: "9ace369c-4469-4479-b90b-87b34529f446"

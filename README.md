@@ -77,6 +77,19 @@ You wouldn't normally have open SSH ports from a "seriously secured" application
 Use something like Bastion to get more secured access.
 Unfortunately I don't have time/budget to setup that for this demo.
 
+```bash
+chmod u+x ./setup-managedhsm.sh
+chmod u+x ./setup-sql.sh
+./setup-managedhsm.sh
+./setup-sql.sh
+```
+
+- AZ CLI installation
+- Device login
+- Subscription selection
+- HSM activation, role assignments, key creation
+- Sqlcmd installation, SQL user creation, permission assignments
+
 ## Local development
 
 `dotnet ef database update -s Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web -p Joonasw.SeriouslySecuringAzurePaas.TodoApp.Data`

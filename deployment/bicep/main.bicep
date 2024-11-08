@@ -281,6 +281,7 @@ module appServiceEnvironment 'modules/appServiceEnvironment.bicep' = {
   dependsOn: [
     appVnet
     aseNsgDiagnostics
+    firewallDiagnostics
   ]
 }
 

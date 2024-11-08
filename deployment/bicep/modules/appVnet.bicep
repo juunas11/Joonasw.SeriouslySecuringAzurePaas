@@ -60,37 +60,37 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
   properties: {
     securityRules: [
       // TODO: Fix issues with NSG / Route table so they can be re-enabled
-      // {
-      //   name: 'AllowAppGatewayHttpsInbound'
-      //   properties: {
-      //     priority: 100
-      //     direction: 'Inbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: subnets.appGateway.addressPrefix
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: '*'
-      //     destinationPortRange: '443'
-      //   }
-      // }
-      // {
-      //   name: 'AllowBuildAgentHttpsInbound'
-      //   properties: {
-      //     priority: 200
-      //     direction: 'Inbound'
-      //     access: 'Allow'
-      //     protocol: 'Tcp'
-      //     sourceAddressPrefix: subnets.buildAgent.addressPrefix
-      //     sourcePortRange: '*'
-      //     destinationAddressPrefix: '*'
-      //     destinationPortRange: '443'
-      //   }
-      // }
+      {
+        name: 'AllowAppGatewayHttpsInbound'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: subnets.appGateway.addressPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'AllowBuildAgentHttpsInbound'
+        properties: {
+          priority: 200
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: subnets.buildAgent.addressPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '443'
+        }
+      }
       {
         // Internal health pings
         name: 'AllowAzureLoadBalancerInbound'
         properties: {
-          priority: 100
+          priority: 300
           direction: 'Inbound'
           access: 'Allow'
           protocol: 'Tcp'
@@ -101,60 +101,61 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
         }
       }
       allowManagementVmInboundRule
-      // denyAllInboundRule
-      {
-        name: 'AllowMonitorHttpsOutbound'
-        properties: {
-          priority: 100
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: hubSubnets.monitor.addressPrefix
-          destinationPortRange: '443'
-        }
-      }
-      {
-        name: 'AllowSqlTdsOutbound'
-        properties: {
-          priority: 200
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: subnets.sql.addressPrefix
-          destinationPortRange: '1433'
-        }
-      }
-      {
-        name: 'AllowManagedHsmHttpsOutbound'
-        properties: {
-          priority: 300
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: subnets.appServiceManagedHsm.addressPrefix
-          destinationPortRange: '443'
-        }
-      }
-      {
-        name: 'AllowStorageHttpsOutbound'
-        properties: {
-          priority: 400
-          direction: 'Outbound'
-          access: 'Allow'
-          protocol: 'Tcp'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: subnets.storage.addressPrefix
-          destinationPortRange: '443'
-        }
-      }
-      denyAllOutboundRule
+      denyAllInboundRule
+      // TODO: Let's see can we limit outbound traffic
+      // {
+      //   name: 'AllowMonitorHttpsOutbound'
+      //   properties: {
+      //     priority: 100
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: hubSubnets.monitor.addressPrefix
+      //     destinationPortRange: '443'
+      //   }
+      // }
+      // {
+      //   name: 'AllowSqlTdsOutbound'
+      //   properties: {
+      //     priority: 200
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: subnets.sql.addressPrefix
+      //     destinationPortRange: '1433'
+      //   }
+      // }
+      // {
+      //   name: 'AllowManagedHsmHttpsOutbound'
+      //   properties: {
+      //     priority: 300
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: subnets.appServiceManagedHsm.addressPrefix
+      //     destinationPortRange: '443'
+      //   }
+      // }
+      // {
+      //   name: 'AllowStorageHttpsOutbound'
+      //   properties: {
+      //     priority: 400
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: 'Tcp'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: subnets.storage.addressPrefix
+      //     destinationPortRange: '443'
+      //   }
+      // }
+      // denyAllOutboundRule
     ]
   }
 }
@@ -450,7 +451,6 @@ resource routeTable 'Microsoft.Network/routeTables@2024-01-01' = {
           addressPrefix: '0.0.0.0/0'
           nextHopType: 'VirtualAppliance'
           nextHopIpAddress: firewallPrivateIpAddress
-          hasBgpOverride: false
         }
       }
     ]
@@ -470,7 +470,6 @@ resource createdSqlRouteTable 'Microsoft.Network/routeTables@2024-01-01' = if (e
           addressPrefix: '0.0.0.0/0'
           nextHopType: 'VirtualAppliance'
           nextHopIpAddress: firewallPrivateIpAddress
-          hasBgpOverride: false
         }
       }
     ]
@@ -491,13 +490,12 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-01-01' = {
         name: subnets.appServiceEnvironment.name
         properties: {
           addressPrefix: subnets.appServiceEnvironment.addressPrefix
-          // TODO: Re-enable
-          // networkSecurityGroup: {
-          //   id: appServiceEnvironmentNsg.id
-          // }
-          // routeTable: {
-          //   id: routeTable.id
-          // }
+          networkSecurityGroup: {
+            id: appServiceEnvironmentNsg.id
+          }
+          routeTable: {
+            id: routeTable.id
+          }
           delegations: [
             {
               name: 'Microsoft.Web/hostingEnvironments'
