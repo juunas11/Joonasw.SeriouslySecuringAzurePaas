@@ -92,7 +92,6 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
       // Note this only applies for the connection between the App Service and App Gateway
       minTlsVersion: '1.3'
       // Also require the highest cipher suite
-      // TODO: See if App Gateway supports this cipher suite
       minTlsCipherSuite: 'TLS_AES_256_GCM_SHA384'
       remoteDebuggingEnabled: false
       // This applies to connections between the App Service and the build agent

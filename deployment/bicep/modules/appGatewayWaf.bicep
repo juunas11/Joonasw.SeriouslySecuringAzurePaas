@@ -310,7 +310,6 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
         }
       }
     ]
-    // TODO: Test
     enableHttp2: true
     firewallPolicy: {
       id: wafPolicy.id

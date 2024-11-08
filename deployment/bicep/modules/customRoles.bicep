@@ -9,8 +9,7 @@ resource developerProductionRole 'Microsoft.Authorization/roleDefinitions@2022-0
     permissions: [
       {
         actions: [
-          // TODO: Test these again if we can read metrics or not
-          // Read and restart App Services
+          // Read and restart App Services, look at metrics
           'Microsoft.Web/sites/read'
           'Microsoft.Web/sites/config/Read'
           'Microsoft.Web/sites/restart/action'

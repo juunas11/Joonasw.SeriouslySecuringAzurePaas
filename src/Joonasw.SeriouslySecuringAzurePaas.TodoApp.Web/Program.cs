@@ -28,9 +28,10 @@ public class Program
             telemetryClient = new TelemetryClient(telemetryConfiguration);
         }
 
+        // TODO: Update jquery and bootstrap
+
         try
         {
-            // TODO: Add other security headers (A+ on Mozilla Observatory)
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApp(
                     msIdOptions =>

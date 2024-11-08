@@ -27,6 +27,8 @@ $certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path 
 # TODO: Get this through secure string (user input)
 $certificatePassword = $config.certificatePassword
 
+# TODO: Make cert with chain included
+
 $managementVmAdminSshPublicKey = (Get-Content -Path $managementVmAdminSshPublicKeyFilePath -Raw).Trim()
 
 # Check subscription is available
