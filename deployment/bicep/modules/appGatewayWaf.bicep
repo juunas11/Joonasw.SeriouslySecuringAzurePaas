@@ -24,7 +24,6 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
           ruleSetVersion: '3.2'
           ruleGroupOverrides: [
             {
-              // TODO: Test this
               ruleGroupName: 'REQUEST-920-PROTOCOL-ENFORCEMENT'
               rules: [
                 {
@@ -37,6 +36,25 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
                 }
               ]
             }
+            {
+              // These two have caused nothing but problems
+              // They detect comments in cookies
+              // and hex encoding in ID tokens.
+              // You will need _a lot_ of exclusions for them to work.
+              ruleGroupName: 'REQUEST-942-APPLICATION-ATTACK-SQLI'
+              rules: [
+                {
+                  // SQL Comment Sequence Detected
+                  ruleId: '942440'
+                  state: 'Disabled'
+                }
+                {
+                  // SQL Hex Encoding Identified
+                  ruleId: '942450'
+                  state: 'Disabled'
+                }
+              ]
+            }
           ]
         }
         {
@@ -44,54 +62,7 @@ resource wafPolicy 'Microsoft.Network/ApplicationGatewayWebApplicationFirewallPo
           ruleSetVersion: '1.1'
         }
       ]
-      exclusions: [
-        // Exclude the two cookies' values from SQL comment checks (they can contain double dashes, causing random blocks)
-        {
-          matchVariable: 'RequestCookieValues'
-          selector: '.AspNetCore.Cookies'
-          selectorMatchOperator: 'StartsWith'
-          exclusionManagedRuleSets: [
-            {
-              ruleSetType: 'OWASP'
-              ruleSetVersion: '3.2'
-              ruleGroups: [
-                {
-                  ruleGroupName: 'REQUEST-942-APPLICATION-ATTACK-SQLI'
-                  rules: [
-                    {
-                      // SQL Comment Sequence Detected
-                      ruleId: '942440'
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-
-        {
-          matchVariable: 'RequestCookieValues'
-          selector: '.AspNetCore.Antiforgery'
-          selectorMatchOperator: 'StartsWith'
-          exclusionManagedRuleSets: [
-            {
-              ruleSetType: 'OWASP'
-              ruleSetVersion: '3.2'
-              ruleGroups: [
-                {
-                  ruleGroupName: 'REQUEST-942-APPLICATION-ATTACK-SQLI'
-                  rules: [
-                    {
-                      // SQL Comment Sequence Detected
-                      ruleId: '942440'
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
+      exclusions: []
     }
     policySettings: {
       requestBodyCheck: true
@@ -340,7 +311,7 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
       }
     ]
     // TODO: Test
-    enableHttp2: false
+    enableHttp2: true
     firewallPolicy: {
       id: wafPolicy.id
     }

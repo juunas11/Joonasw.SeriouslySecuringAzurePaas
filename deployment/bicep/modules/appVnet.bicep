@@ -101,7 +101,34 @@ resource appServiceEnvironmentNsg 'Microsoft.Network/networkSecurityGroups@2024-
         }
       }
       allowManagementVmInboundRule
+      // TODO: Check logs for this and the outbound rule to see if it is working (ASE did deploy and function without these too even though there was blocks in logs)
+      // {
+      //   name: 'AllowInternalInbound'
+      //   properties: {
+      //     priority: 400
+      //     direction: 'Inbound'
+      //     access: 'Allow'
+      //     protocol: '*'
+      //     sourceAddressPrefix: '172.16.0.0/12'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: '*'
+      //     destinationPortRange: '*'
+      //   }
+      // }
       denyAllInboundRule
+      // {
+      //   name: 'AllowInternalOutbound'
+      //   properties: {
+      //     priority: 100
+      //     direction: 'Outbound'
+      //     access: 'Allow'
+      //     protocol: '*'
+      //     sourceAddressPrefix: '*'
+      //     sourcePortRange: '*'
+      //     destinationAddressPrefix: '172.16.0.0/12'
+      //     destinationPortRange: '*'
+      //   }
+      // }
       // TODO: Let's see can we limit outbound traffic
       // {
       //   name: 'AllowMonitorHttpsOutbound'

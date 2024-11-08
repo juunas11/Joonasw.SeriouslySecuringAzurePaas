@@ -75,6 +75,14 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'EntraId__ClientId'
           value: entraIdClientId
         }
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
+        }
+        {
+          name: 'WEBSITE_ENABLE_SYNC_UPDATE_SITE'
+          value: 'true'
+        }
       ]
       alwaysOn: true
       ftpsState: 'Disabled'
