@@ -27,7 +27,7 @@ $certificateData = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path 
 # TODO: Get this through secure string (user input)
 $certificatePassword = $config.certificatePassword
 
-# TODO: Make cert with chain included
+# TODO: Test cert with SSLlabs again to see full chain is included this time (A+?)
 
 $managementVmAdminSshPublicKey = (Get-Content -Path $managementVmAdminSshPublicKeyFilePath -Raw).Trim()
 

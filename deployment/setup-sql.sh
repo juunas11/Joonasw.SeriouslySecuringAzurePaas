@@ -15,7 +15,6 @@ sudo apt-get install sqlcmd
 
 echo "SQLCMD installed"
 
-# TODO: Could we reduce these permissions?
 SQL="
 CREATE USER [$DEVOPS_POOL_IDENTITY_NAME] FROM EXTERNAL PROVIDER;
 ALTER ROLE db_ddladmin ADD MEMBER [$DEVOPS_POOL_IDENTITY_NAME];
