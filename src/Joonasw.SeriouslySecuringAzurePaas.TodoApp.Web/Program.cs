@@ -28,8 +28,6 @@ public class Program
             telemetryClient = new TelemetryClient(telemetryConfiguration);
         }
 
-        // TODO: Update jquery and bootstrap
-
         try
         {
             builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
