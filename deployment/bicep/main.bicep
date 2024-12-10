@@ -161,13 +161,13 @@ module appVnet 'modules/appVnet.bicep' = {
   }
 }
 
-module aseNsgDiagnostics 'modules/nsgDiagnostics.bicep' = {
-  name: '${deployment().name}-aseNsgDiagnostics'
-  params: {
-    logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
-    nsgResourceId: appVnet.outputs.appServiceEnvironmentNsgResourceId
-  }
-}
+// module aseNsgDiagnostics 'modules/nsgDiagnostics.bicep' = {
+//   name: '${deployment().name}-aseNsgDiagnostics'
+//   params: {
+//     logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
+//     nsgResourceId: appVnet.outputs.appServiceEnvironmentNsgResourceId
+//   }
+// }
 
 module appHubPeering 'modules/vnetPeering.bicep' = {
   name: '${deployment().name}-appHubPeering'
@@ -200,18 +200,15 @@ module monitor 'modules/monitor.bicep' = {
     appVnetResourceId: appVnet.outputs.vnetResourceId
     storageBlobDnsZoneResourceId: commonPrivateDns.outputs.storageBlobDnsZoneResourceId
   }
-  dependsOn: [
-    hubVnet
-  ]
 }
 
-module firewallDiagnostics 'modules/firewallDiagnostics.bicep' = {
-  name: '${deployment().name}-firewallDiagnostics'
-  params: {
-    firewallResourceId: firewall.outputs.firewallResourceId
-    logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
-  }
-}
+// module firewallDiagnostics 'modules/firewallDiagnostics.bicep' = {
+//   name: '${deployment().name}-firewallDiagnostics'
+//   params: {
+//     firewallResourceId: firewall.outputs.firewallResourceId
+//     logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
+//   }
+// }
 
 module sql 'modules/sql.bicep' = {
   name: '${deployment().name}-sql'
@@ -254,9 +251,6 @@ module managedHsm 'modules/managedHsm.bicep' = {
     privateEndpointSubnetName: appSubnets.appServiceManagedHsm.name
     initialAdminObjectId: initialManagedHsmAdminObjectId
   }
-  dependsOn: [
-    appVnet
-  ]
 }
 
 module storageAccount 'modules/storageAccount.bicep' = {
@@ -280,8 +274,8 @@ module appServiceEnvironment 'modules/appServiceEnvironment.bicep' = {
   }
   dependsOn: [
     appVnet
-    aseNsgDiagnostics
-    firewallDiagnostics
+    // aseNsgDiagnostics
+    // firewallDiagnostics
   ]
 }
 
@@ -328,11 +322,8 @@ module appGatewayWaf 'modules/appGatewayWaf.bicep' = {
     certificatePassword: appGatewayCertificatePassword
     webAppFqdn: webApp.outputs.webAppFqdn
     appDomainName: appDomainName
-    logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
+    // logAnalyticsWorkspaceId: monitor.outputs.workspaceResourceId
   }
-  dependsOn: [
-    appVnet
-  ]
 }
 
 module managementVm 'modules/managementVm.bicep' = {

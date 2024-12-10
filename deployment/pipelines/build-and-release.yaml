@@ -6,7 +6,7 @@ trigger:
       - main
 
 pool:
-  name: "devops-pool-t45xzbuugeupa"
+  name: "devops-pool-x6ensjv3r62em"
 
 variables:
   - template: variables.yaml

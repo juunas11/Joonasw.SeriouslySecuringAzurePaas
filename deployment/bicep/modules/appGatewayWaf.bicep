@@ -6,7 +6,7 @@ param appGatewaySubnetName string
 param appGatewayPrivateIpAddress string
 param webAppFqdn string
 param appDomainName string
-param logAnalyticsWorkspaceId string
+// param logAnalyticsWorkspaceId string
 
 @secure()
 param certificateData string
@@ -335,17 +335,17 @@ resource appGateway 'Microsoft.Network/applicationGateways@2024-01-01' = {
   }
 }
 
-resource wafDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: 'waf-logs-to-loganalytics'
-  scope: appGateway
-  properties: {
-    logs: [
-      {
-        category: 'ApplicationGatewayFirewallLog'
-        enabled: true
-      }
-    ]
-    metrics: []
-    workspaceId: logAnalyticsWorkspaceId
-  }
-}
+// resource wafDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+//   name: 'waf-logs-to-loganalytics'
+//   scope: appGateway
+//   properties: {
+//     logs: [
+//       {
+//         category: 'ApplicationGatewayFirewallLog'
+//         enabled: true
+//       }
+//     ]
+//     metrics: []
+//     workspaceId: logAnalyticsWorkspaceId
+//   }
+// }

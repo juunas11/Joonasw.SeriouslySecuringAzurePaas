@@ -1,9 +1,9 @@
 #!/bin/bash
 
-DEVOPS_POOL_IDENTITY_NAME=devops-pool-identity-t45xzbuugeupa
-WEB_APP_NAME=app-t45xzbuugeupa
-SQL_SERVER_FQDN=sql-t45xzbuugeupa.36976c4c7473.database.windows.net
-SQL_DATABASE_NAME=sqldbt45xzbuugeupa
+DEVOPS_POOL_IDENTITY_NAME=devops-pool-identity-x6ensjv3r62em
+WEB_APP_NAME=app-x6ensjv3r62em
+SQL_SERVER_FQDN=sql-x6ensjv3r62em.178c2ae3ce60.database.windows.net
+SQL_DATABASE_NAME=sqldbx6ensjv3r62em
 
 curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
 

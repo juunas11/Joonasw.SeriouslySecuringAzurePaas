@@ -1,11 +1,11 @@
 variables:
   - name: SqlServer
-    value: "sql-t45xzbuugeupa.36976c4c7473.database.windows.net"
+    value: "sql-x6ensjv3r62em.178c2ae3ce60.database.windows.net"
   - name: SqlDatabase
-    value: "sqldbt45xzbuugeupa"
+    value: "sqldbx6ensjv3r62em"
   - name: WebApp
-    value: "app-t45xzbuugeupa"
+    value: "app-x6ensjv3r62em"
   - name: ResourceGroup
-    value: "rg-securitypocs20241127"
+    value: "rg-ssap-cloudbrew"
   - name: ManagedIdentityObjectId
-    value: "cdf8c807-51dc-4a82-8b37-00e52da7d641"
+    value: "3939dd11-70b3-4e97-bb78-03245b6b7b51"

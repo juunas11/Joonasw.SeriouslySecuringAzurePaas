@@ -1,9 +1,9 @@
 #!/bin/bash
 
 SUBSCRIPTION_ID=f532ecab-6efb-4f51-8848-b7a7e9ab4d6d
-HSM_NAME=hsm-app-dp-t45xzbuugeupa
+HSM_NAME=hsm-app-dp-x6ensjv3r62em
 ADMIN_OBJECT_ID=91a51582-c163-4491-a9da-1b76fbcb906b
-WEB_APP_OBJECT_ID=d17aaf1e-ecdb-4c25-9a37-116f12646d97
+WEB_APP_OBJECT_ID=e2d34f5c-8b66-4c16-917c-0b33dab00f29
 DATA_PROTECTION_KEY_NAME=DataProtectionKeyEncryptionKey
 TENANT_ID=0d7e0754-812c-4a0f-883f-5f34cf78d354
 
