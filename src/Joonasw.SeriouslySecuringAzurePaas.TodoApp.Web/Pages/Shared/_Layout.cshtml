@@ -4,15 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Todos</title>
-    <link rel="stylesheet"
-        href="~/lib/bootstrap/dist/css/bootstrap.min.css"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-        crossorigin="anonymous"/>
-    <link rel="stylesheet"
-        href="~/css/site.css"
-        asp-append-version="true"
-        integrity="sha384-BXgMSWKHBEro7OJq2cVIAA3Ktd99b14F7ZSelbMShvzdlmubtR6Ye0o8sSS+9mpP"
-        crossorigin="anonymous" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Joonasw.SeriouslySecuringAzurePaas.TodoApp.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
@@ -46,16 +40,9 @@
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"
-        integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs"
-        crossorigin="anonymous"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
-    <script src="~/js/site.js"
-        asp-append-version="true"
-        integrity="sha384-p4/4dBOFSa/staf5EmjqbnJCL1lO362U+nnCsOJasqxfSXfuYWTj8xCLUyELLXPe"
-        crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
